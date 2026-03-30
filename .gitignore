@@ -1,32 +1,67 @@
+# Build e Artefatos
+target/
 bin/
 build/
-.gradle/
 out/
+.gradle/
+.kotlin/
 gen/
 
-.kotlin/
+# Compilados e Pacotes
 *.class
-*.pyc
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
 
-.externalNativeBuild/
-.cxx/
-capture/
-local.properties
-/captures/
-*.apk
-*.ap_
-*.aab
-*.dex
+# Servidores (Tomcat, Jetty, Glassfish)
+temp/
+work/
+logs/
+.deployables/
+.recommenders/
+*.log
 
+# IntelliJ
 .idea/
 *.iml
 *.iws
 *.ipr
+out/
 
-.DS_Store
-Thumbs.db
+# Eclipse
+.metadata/
+.classpath
+.project
+.settings/
+*.launch
+.externalNativeBuild/
 
+# VS Code
+.vscode/
+*.code-workspace
+
+# Segurança e Configurações Locais
 *.jks
 *.keystore
 *.p12
+*.pem
+local.properties
 google-services.json
+
+# SO
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# arquivos temporários do maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.nextSnapshot
+pom.xml.releaseBackup
+release.properties
+
+# JSP/Servlets (uso de maven para dependências)
+lib/
