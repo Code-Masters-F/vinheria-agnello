@@ -10,11 +10,19 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Set;
 
 // A anotação @WebFilter("/api/*") indica que este filtro SÓ roda
 // para as rotas que retornam dados JSON (nossa API REST para o Kotlin).
 @WebFilter("/api/*")
 public class CorsFilter implements Filter {
+
+    // Origens confiáveis que podem enviar credenciais.
+    // Adicione aqui os domínios permitidos em produção.
+    private static final Set<String> ALLOWED_ORIGINS = Set.of(
+        "http://localhost:3000",
+        "http://localhost:8080"
+    );
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -29,18 +37,21 @@ public class CorsFilter implements Filter {
 
         // Passo 1: Configurar as permissões (Headers CORS)
 
-        // Diz quais domínios/aplicativos podem ler nossos dados.
-        // O "*" significa "qualquer um" (útil em desenvolvimento).
-        response.setHeader("Access-Control-Allow-Origin", "*");
+        // Valida a origem contra a lista de origens confiáveis.
+        // Usar "*" junto com Allow-Credentials é inválido, portanto refletimos
+        // a origem somente quando ela for reconhecida.
+        String origin = request.getHeader("Origin");
+        if (origin != null && ALLOWED_ORIGINS.contains(origin)) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Vary", "Origin");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+        }
 
         // Diz quais tipos de ação HTTP são permitidas
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 
         // Diz quais cabeçalhos especiais o aplicativo Kotlin pode enviar para nós
         response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Token");
-
-        // Diz que aceitamos receber Cookies (importante para manter a sessão do usuário logado)
-        response.setHeader("Access-Control-Allow-Credentials", "true");
 
         // Diz para o navegador memorizar essas regras por 1 hora (3600 segundos) para não ficar perguntando toda hora
         response.setHeader("Access-Control-Max-Age", "3600");

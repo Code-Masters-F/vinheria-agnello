@@ -8,15 +8,13 @@ import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
-// A anotação @WebFilter("/admin/*") indica que este filtro SÓ vai rodar
-// quando alguém tentar acessar URLs que começam com "/admin/".
-@WebFilter("/admin/*")
+// Registrado e ordenado via web.xml após TenantFilter.
+// A anotação @WebFilter foi removida para evitar registro duplicado e ordem indefinida.
 public class AuthFilter implements Filter {
 
     @Override
@@ -38,8 +36,11 @@ public class AuthFilter implements Filter {
 
         // Passo 3: Exceções de Segurança!
         // Telas de login, registro e arquivos visuais (CSS/JS) precisam ser públicas.
-        // Se a URL for uma destas, nós liberamos o acesso imediatamente.
-        if (uri.endsWith("/login.jsp") || uri.endsWith("/registro.jsp") || uri.contains("/static/")) {
+        // Usamos comparações exatas e prefixo estrito para evitar expor rotas protegidas.
+        String adminLogin = contextPath + "/admin/login.jsp";
+        String adminRegistro = contextPath + "/admin/registro.jsp";
+        String staticPrefix = contextPath + "/admin/static/";
+        if (uri.equals(adminLogin) || uri.equals(adminRegistro) || uri.startsWith(staticPrefix)) {
             chain.doFilter(req, resp); // Libera o acesso
             return; // Para a execução do filtro aqui
         }

@@ -31,6 +31,26 @@ public class VinheriaDAO {
         return Optional.empty();
     }
 
+    public Optional<Vinheria> findBySlugActive(String slug) {
+        String sql = "SELECT * FROM vinheria WHERE slug = ? AND ativo = true";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, slug);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToVinheria(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar vinheria ativa por slug: " + slug, e);
+        }
+
+        return Optional.empty();
+    }
+
     public Optional<Vinheria> findById(Long id) {
         String sql = "SELECT * FROM vinheria WHERE id = ?";
 
