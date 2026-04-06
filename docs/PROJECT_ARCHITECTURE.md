@@ -136,25 +136,48 @@ vinheiro/
 │       │       │   └── CorsFilter.java              # Habilita CORS para API Kotlin
 │       │       │
 │       │       ├── model/
+│       │       │   ├── enums/                       # Enumerações do domínio
+│       │       │   │   ├── TipoVinho.java
+│       │       │   │   ├── Ocasiao.java
+│       │       │   │   ├── StatusPedido.java
+│       │       │   │   ├── TipoEntrega.java
+│       │       │   │   ├── StatusPagamento.java
+│       │       │   │   ├── MetodoPagamento.java
+│       │       │   │   ├── StatusCampanha.java
+│       │       │   │   ├── CanalCampanha.java
+│       │       │   │   └── TipoCadastro.java
 │       │       │   ├── Vinheria.java
+│       │       │   ├── UsuarioAdmin.java             # Usuário do painel B2B
 │       │       │   ├── Vinho.java
+│       │       │   ├── VinhoOcasiao.java            # Relação M:N vinho-ocasião
 │       │       │   ├── Cliente.java
 │       │       │   ├── Pedido.java
 │       │       │   ├── ItemPedido.java
-│       │       │   ├── Campanha.java
-│       │       │   ├── PontosFidelidade.java
+│       │       │   ├── Pagamento.java
 │       │       │   ├── AvaliacaoVinho.java
+│       │       │   ├── Campanha.java
+│       │       │   ├── ConfigFidelidade.java        # Config do programa de fidelidade
+│       │       │   ├── HistoricoPontos.java         # Histórico de pontos
+│       │       │   ├── ScanQRCode.java              # Análise de QR Codes
 │       │       │   └── Recomendacao.java
 │       │       │
 │       │       ├── dao/
 │       │       │   ├── VinheriaDAO.java
+│       │       │   ├── UsuarioAdminDAO.java
 │       │       │   ├── VinhoDAO.java
 │       │       │   ├── ClienteDAO.java
 │       │       │   ├── PedidoDAO.java
-│       │       │   └── CampanhaDAO.java
+│       │       │   ├── ItemPedidoDAO.java
+│       │       │   ├── PagamentoDAO.java
+│       │       │   ├── AvaliacaoVinhoDAO.java
+│       │       │   ├── CampanhaDAO.java
+│       │       │   ├── ConfigFidelidadeDAO.java
+│       │       │   ├── HistoricoPontosDAO.java
+│       │       │   └── ScanQRCodeDAO.java
 │       │       │
 │       │       ├── service/
 │       │       │   ├── VinheriaService.java
+│       │       │   ├── UsuarioAdminService.java
 │       │       │   ├── VinhoService.java
 │       │       │   ├── ClienteService.java
 │       │       │   ├── PedidoService.java
@@ -167,6 +190,7 @@ vinheiro/
 │       │       ├── servlet/
 │       │       │   │
 │       │       │   ├── admin/                       # Painel B2B — renderiza JSPs
+│       │       │   │   ├── AuthServlet.java         # Login/logout admin B2B
 │       │       │   │   ├── DashboardServlet.java
 │       │       │   │   ├── CatalogoServlet.java
 │       │       │   │   ├── PedidosServlet.java
@@ -177,12 +201,14 @@ vinheiro/
 │       │       │   │   └── ConfiguracaoServlet.java
 │       │       │   │
 │       │       │   └── api/                         # API REST — retorna JSON para Kotlin
+│       │       │       ├── TenantApiServlet.java
 │       │       │       ├── VinhosApiServlet.java
 │       │       │       ├── RecomendacaoApiServlet.java
 │       │       │       ├── PedidoApiServlet.java
 │       │       │       ├── ClienteApiServlet.java
 │       │       │       ├── AuthApiServlet.java
-│       │       │       └── FidelidadeApiServlet.java
+│       │       │       ├── FidelidadeApiServlet.java
+│       │       │       └── PagamentoApiServlet.java
 │       │       │
 │       │       └── util/
 │       │           ├── JsonUtil.java                # Helpers para serialização
@@ -193,23 +219,26 @@ vinheiro/
 │       └── webapp/
 │           ├── WEB-INF/
 │           │   ├── web.xml                          # Mapeamento de Servlets e Filtros
-│           │   └── views/
-│           │       ├── admin/                       # JSPs do painel B2B
-│           │       │   ├── layout/
-│           │       │   │   ├── header.jsp
-│           │       │   │   ├── sidebar.jsp
-│           │       │   │   └── footer.jsp
-│           │       │   ├── dashboard.jsp
-│           │       │   ├── catalogo.jsp
-│           │       │   ├── pedidos.jsp
-│           │       │   ├── clientes.jsp
-│           │       │   ├── campanhas.jsp
-│           │       │   ├── fidelidade.jsp
-│           │       │   ├── relatorios.jsp
-│           │       │   └── configuracao.jsp
-│           │       └── auth/
-│           │           ├── login.jsp
-│           │           └── registro.jsp
+│       │   └── views/
+│       │       ├── error/
+│       │       │   ├── 404.jsp                    # Página não encontrada
+│       │       │   └── 500.jsp                    # Erro interno
+│       │       ├── admin/                        # JSPs do painel B2B
+│       │       │   ├── layout/
+│       │       │   │   ├── header.jsp
+│       │       │   │   ├── sidebar.jsp
+│       │       │   │   └── footer.jsp
+│       │       │   ├── dashboard.jsp
+│       │       │   ├── catalogo.jsp
+│       │       │   ├── pedidos.jsp
+│       │       │   ├── clientes.jsp
+│       │       │   ├── campanhas.jsp
+│       │       │   ├── fidelidade.jsp
+│       │       │   ├── relatorios.jsp
+│       │       │   └── configuracao.jsp
+│       │       └── auth/
+│       │           ├── login.jsp
+│       │           └── registro.jsp
 │           │
 │           ├── static/
 │           │   ├── css/
@@ -249,7 +278,6 @@ CREATE TABLE vinheria (
     logo_url        VARCHAR(255),
     cor_primaria    VARCHAR(7),                    -- hex: #8B1A1A
     cor_secundaria  VARCHAR(7),
-    plano           ENUM('starter','pro','restaurante') DEFAULT 'starter',
     ativo           BOOLEAN DEFAULT TRUE,
     criado_em       DATETIME DEFAULT CURRENT_TIMESTAMP
 );
