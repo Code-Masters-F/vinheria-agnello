@@ -1,7 +1,7 @@
 package br.com.vinheiro.dao;
 
-import br.com.vinheiro.config.DatabaseConfig;
 import br.com.vinheiro.model.Vinheria;
+import br.com.vinheiro.config.DatabaseConfig;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -15,7 +15,7 @@ public class VinheriaDAO {
         String sql = "SELECT * FROM vinheria WHERE slug = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, slug);
 
@@ -35,7 +35,7 @@ public class VinheriaDAO {
         String sql = "SELECT * FROM vinheria WHERE slug = ? AND ativo = true";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, slug);
 
@@ -55,7 +55,7 @@ public class VinheriaDAO {
         String sql = "SELECT * FROM vinheria WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, id);
 
@@ -76,8 +76,8 @@ public class VinheriaDAO {
         List<Vinheria> vinherias = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 vinherias.add(mapResultSetToVinheria(rs));
@@ -94,8 +94,8 @@ public class VinheriaDAO {
         List<Vinheria> vinherias = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 vinherias.add(mapResultSetToVinheria(rs));
@@ -109,10 +109,10 @@ public class VinheriaDAO {
 
     public Long save(Vinheria vinheria) {
         String sql = "INSERT INTO vinheria (nome, slug, logo_url, cor_primaria, cor_secundaria, ativo, criado_em) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, vinheria.getNome());
             stmt.setString(2, vinheria.getSlug());
@@ -138,10 +138,10 @@ public class VinheriaDAO {
 
     public void update(Vinheria vinheria) {
         String sql = "UPDATE vinheria SET nome = ?, slug = ?, logo_url = ?, cor_primaria = ?, " +
-                     "cor_secundaria = ?, ativo = ? WHERE id = ?";
+                "cor_secundaria = ?, ativo = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, vinheria.getNome());
             stmt.setString(2, vinheria.getSlug());
@@ -161,7 +161,7 @@ public class VinheriaDAO {
         String sql = "DELETE FROM vinheria WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, id);
             stmt.executeUpdate();
@@ -174,7 +174,7 @@ public class VinheriaDAO {
         String sql = "SELECT COUNT(*) FROM vinheria WHERE slug = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, slug);
 
@@ -194,7 +194,7 @@ public class VinheriaDAO {
         String sql = "SELECT COUNT(*) FROM vinheria WHERE slug = ? AND id != ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, slug);
             stmt.setLong(2, id);
