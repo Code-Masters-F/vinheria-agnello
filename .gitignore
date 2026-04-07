@@ -65,3 +65,7 @@ release.properties
 
 # JSP/Servlets (uso de maven para dependências)
 lib/
+
+# IA
+.agent
+.specify
