@@ -48,6 +48,7 @@
                       id="wineForm" novalidate>
                     <input type="hidden" name="action" value="create" id="formAction">
                     <input type="hidden" name="id"     value="" id="formId">
+                    <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
 
                     <div class="form-grid">
                         <div class="form-group">
@@ -178,9 +179,18 @@
                                     Estoque: <c:out value="${v.estoque}" />
                                 </span>
                                 <div class="d-flex gap-1">
-                                    <%-- Edit: show form with existing data (JS helper) --%>
-                                    <button class="btn btn-secondary btn-sm btn-icon"
-                                            onclick="editWine('${v.id}','<c:out value="${v.nome}"/>','<c:out value="${v.preco}"/>','${v.tipo}','${v.estoque}','${v.estoqueMinimo}')"
+                                    <%-- Edit: uses data attributes to avoid unsafe inline JS arguments --%>
+                                    <button class="btn btn-secondary btn-sm btn-icon edit-wine-btn"
+                                            data-id="${v.id}"
+                                            data-nome="<c:out value='${v.nome}'/>"
+                                            data-preco="<c:out value='${v.preco}'/>"
+                                            data-tipo="${v.tipo}"
+                                            data-estoque="${v.estoque}"
+                                            data-estoqueMinimo="${v.estoqueMinimo}"
+                                            data-pais="<c:out value='${v.pais}'/>"
+                                            data-safra="<c:out value='${v.safra}'/>"
+                                            data-descricao="<c:out value='${v.descricao}'/>"
+                                            data-foto="<c:out value='${v.fotoUrl}'/>"
                                             title="Editar <c:out value='${v.nome}'/>">
                                         <span class="nav-icon" aria-hidden="true">edit</span>
                                     </button>
@@ -191,6 +201,7 @@
                                           onsubmit="return confirm('Desativar este vinho?')">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="${v.id}">
+                                        <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                                         <button type="submit" class="btn btn-danger btn-sm btn-icon"
                                                 title="Desativar <c:out value='${v.nome}'/>">
                                             <span class="nav-icon" aria-hidden="true">delete</span>
@@ -207,18 +218,40 @@
     </main>
 
 <script>
-/* Edit helper: populates the form with existing wine data */
-function editWine(id, nome, preco, tipo, estoque, estoqueMinimo) {
-    document.getElementById('formAction').value = 'update';
-    document.getElementById('formId').value = id;
-    document.getElementById('nome').value = nome;
-    document.getElementById('preco').value = preco;
-    document.getElementById('tipo').value = tipo;
-    document.getElementById('estoque').value = estoque;
-    document.getElementById('estoqueMinimo').value = estoqueMinimo;
-    document.getElementById('formWine').style.display = 'block';
-    document.getElementById('btnAddWine').style.display = 'none';
-    document.getElementById('formWine').scrollIntoView({ behavior: 'smooth' });
+document.addEventListener('DOMContentLoaded', () => {
+    // Edit helper using data attributes
+    document.querySelectorAll('.edit-wine-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const d = btn.dataset;
+            document.getElementById('formAction').value = 'update';
+            document.getElementById('formId').value = d.id;
+            document.getElementById('nome').value = d.nome || '';
+            document.getElementById('preco').value = d.preco || '';
+            document.getElementById('tipo').value = d.tipo || '';
+            document.getElementById('estoque').value = d.estoque || '0';
+            document.getElementById('estoqueMinimo').value = d.estoqueMinimo || '0';
+            document.getElementById('pais').value = d.pais || '';
+            document.getElementById('safra').value = d.safra || '';
+            document.getElementById('descricao').value = d.descricao || '';
+            document.getElementById('fotoUrl').value = d.foto || '';
+
+            const formPanel = document.getElementById('formWine');
+            formPanel.style.display = 'block';
+            formPanel.querySelector('.card-title').innerHTML = '<span class="nav-icon">edit</span> Editar Vinho';
+            
+            document.getElementById('btnAddWine').style.display = 'none';
+            formPanel.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+});
+
+function resetWineForm() {
+    document.getElementById('wineForm').reset();
+    document.getElementById('formAction').value = 'create';
+    document.getElementById('formId').value = '';
+    document.getElementById('formWine').style.display = 'none';
+    document.getElementById('btnAddWine').style.display = 'inline-flex';
+    document.getElementById('formWine').querySelector('.card-title').innerHTML = '<span class="nav-icon">wine_bar</span> Cadastrar Novo Vinho';
 }
 </script>
 

@@ -51,6 +51,10 @@ public class RelatoriosServlet extends HttpServlet {
         }
 
         UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            return;
+        }
         Long vinheriaId = admin.getVinheria().getId();
 
         List<Vinho> vinhos = vinhoService.listarDisponiveis(vinheriaId);

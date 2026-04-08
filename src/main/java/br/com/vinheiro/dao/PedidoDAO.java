@@ -39,6 +39,29 @@ public class PedidoDAO {
         return Optional.empty();
     }
 
+    public java.util.List<Pedido> findByVinheriaId(Long vinheriaId, Connection conn) throws SQLException {
+        String sql = "SELECT * FROM pedido WHERE vinheria_id = ? ORDER BY criado_em DESC";
+        java.util.List<Pedido> pedidos = new java.util.ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, vinheriaId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    pedidos.add(mapRow(rs));
+                }
+            }
+        }
+        return pedidos;
+    }
+
+    public void updateStatus(Long id, StatusPedido status, Connection conn) throws SQLException {
+        String sql = "UPDATE pedido SET status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, status.name());
+            stmt.setLong(2, id);
+            stmt.executeUpdate();
+        }
+    }
+
     public void save(Pedido pedido, Connection conn) throws SQLException {
         String sql = "INSERT INTO pedido (vinheria_id, cliente_id, status, tipo_entrega, subtotal, total, endereco_entrega) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?)";

@@ -56,6 +56,10 @@ public class DashboardServlet extends HttpServlet {
         }
 
         UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            return;
+        }
         Long vinheriaId = admin.getVinheria().getId();
 
         // Fetch metrics via service layer (never directly from DAO)

@@ -49,18 +49,35 @@ public class PedidosServlet extends HttpServlet {
             return;
         }
 
+        UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            return;
+        }
+        Long vinheriaId = admin.getVinheria().getId();
+
+        // Ensure CSRF token exists
+        if (session.getAttribute("csrfToken") == null) {
+            session.setAttribute("csrfToken", java.util.UUID.randomUUID().toString());
+        }
+
         // Flash messages from PRG
         String success = (String) session.getAttribute("successMessage");
         String error   = (String) session.getAttribute("errorMessage");
         if (success != null) { req.setAttribute("successMessage", success); session.removeAttribute("successMessage"); }
         if (error   != null) { req.setAttribute("errorMessage",   error);   session.removeAttribute("errorMessage"); }
 
-        req.setAttribute("currentPage",    "pedidos");
-        req.setAttribute("pageTitle",      "Gestão de Pedidos");
-        req.setAttribute("pageSubtitle",   "Acompanhe e atualize o status de cada pedido.");
-        req.setAttribute("statusOptions",  StatusPedido.values());
-
-        req.getRequestDispatcher("/WEB-INF/views/admin/pedidos.jsp").forward(req, resp);
+        try {
+            req.setAttribute("pedidos",        pedidoService.listarPorVinheria(vinheriaId));
+            req.setAttribute("currentPage",    "pedidos");
+            req.setAttribute("pageTitle",      "Gestão de Pedidos");
+            req.setAttribute("pageSubtitle",   "Acompanhe e atualize o status de cada pedido.");
+            req.setAttribute("statusOptions",  StatusPedido.values());
+            req.getRequestDispatcher("/WEB-INF/views/admin/pedidos.jsp").forward(req, resp);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error listing orders", e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao carregar pedidos.");
+        }
     }
 
     @Override
@@ -73,25 +90,37 @@ public class PedidosServlet extends HttpServlet {
             return;
         }
 
+        UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            return;
+        }
+        Long vinheriaId = admin.getVinheria().getId();
+
+        // CSRF Verification
+        String sessionToken = (String) session.getAttribute("csrfToken");
+        String requestToken = req.getParameter("csrfToken");
+        if (sessionToken == null || !sessionToken.equals(requestToken)) {
+            session.setAttribute("errorMessage", "Erro de segurança (CSRF). Ação negada.");
+            resp.sendRedirect(req.getRequestURI());
+            return;
+        }
+
         String pedidoIdStr = req.getParameter("pedidoId");
         String novoStatus  = req.getParameter("novoStatus");
 
         if (pedidoIdStr == null || pedidoIdStr.isBlank()) {
-            req.setAttribute("errorMessage",  "ID do pedido não foi informado.");
-            req.setAttribute("currentPage",   "pedidos");
-            req.setAttribute("pageTitle",     "Gestão de Pedidos");
-            req.setAttribute("statusOptions", StatusPedido.values());
-            req.getRequestDispatcher("/WEB-INF/views/admin/pedidos.jsp").forward(req, resp);
+            session.setAttribute("errorMessage", "ID do pedido não informado.");
+            resp.sendRedirect(req.getRequestURI());
             return;
         }
 
         try {
             long pedidoId = Long.parseLong(pedidoIdStr);
             StatusPedido status = StatusPedido.valueOf(novoStatus);
-            // Note: PedidoService does not yet expose updateStatus; this is a placeholder
-            // that logs the intent until the service method is added.
-            LOGGER.info("Status update requested: pedido=" + pedidoId + " -> " + status);
-            session.setAttribute("successMessage", "Status do pedido atualizado para " + status.name() + ".");
+            
+            pedidoService.atualizarStatus(pedidoId, status, vinheriaId);
+            session.setAttribute("successMessage", "Status do pedido #" + pedidoId + " atualizado para " + status.name() + ".");
         } catch (IllegalArgumentException e) {
             session.setAttribute("errorMessage", "Status inválido: " + novoStatus);
         } catch (Exception e) {
@@ -99,6 +128,6 @@ public class PedidosServlet extends HttpServlet {
             session.setAttribute("errorMessage", "Erro ao atualizar o status do pedido.");
         }
 
-        resp.sendRedirect(req.getContextPath() + "/admin/pedidos");
+        resp.sendRedirect(req.getRequestURI());
     }
 }

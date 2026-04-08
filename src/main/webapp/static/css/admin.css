@@ -797,16 +797,90 @@ textarea.form-control { resize: vertical; min-height: 7rem; }
     margin: 1.25rem 0;
 }
 
+/* ----- Mobile Navigation Specifics ----- */
+.mobile-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+.mobile-toggle:hover { background: var(--color-bg-card); }
+
+.sidebar-close-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-sidebar-hover);
+    border: none;
+    color: var(--color-text-muted);
+    padding: 0.25rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    margin-left: auto;
+}
+
 /* ----- Responsive ----- */
-@media (max-width: 64rem) {
+@media (max-width: 992px) {
     .admin-shell {
-        grid-template-columns: 0 1fr;
+        grid-template-columns: 1fr;
         grid-template-areas:
-            "header header"
-            "main main";
+            "header"
+            "main";
     }
-    .admin-sidebar { display: none; }
+
+    .admin-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 1000;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .sidebar-open .admin-sidebar {
+        left: 0;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 17, 23, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .sidebar-open .sidebar-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .admin-header, .admin-main {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+
+    .mobile-toggle, .sidebar-close-btn {
+        display: flex;
+    }
+
     .panel-grid { grid-template-columns: 1fr; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid-3 { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 576px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; align-items: stretch; }
 }

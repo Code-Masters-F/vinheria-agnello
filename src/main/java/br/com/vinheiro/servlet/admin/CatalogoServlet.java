@@ -60,6 +60,10 @@ public class CatalogoServlet extends HttpServlet {
         }
 
         UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            return;
+        }
         Long vinheriaId = admin.getVinheria().getId();
 
         // Check for flash messages from previous POST (PRG pattern)
@@ -90,71 +94,62 @@ public class CatalogoServlet extends HttpServlet {
         }
 
         UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            return;
+        }
         Long vinheriaId = admin.getVinheria().getId();
 
         String action = req.getParameter("action");
 
-        if ("create".equals(action)) {
-            handleCreate(req, resp, session, vinheriaId);
-        } else if ("update".equals(action)) {
-            handleUpdate(req, resp, session, vinheriaId);
-        } else if ("delete".equals(action)) {
-            handleDelete(req, resp, session, vinheriaId);
-        } else {
-            resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
+        try {
+            if ("create".equals(action)) {
+                handleCreate(req, resp, session, vinheriaId);
+            } else if ("update".equals(action)) {
+                handleUpdate(req, resp, session, vinheriaId);
+            } else if ("delete".equals(action)) {
+                handleDelete(req, resp, session, vinheriaId);
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
+            }
+        } catch (InvalidDataException e) {
+            forwardWithError(req, resp, vinheriaId, e.getMessage());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error processing catalog action: " + action, e);
+            forwardWithError(req, resp, vinheriaId, "Erro interno ao processar a solicitação.");
         }
     }
 
     private void handleCreate(HttpServletRequest req, HttpServletResponse resp,
                                HttpSession session, Long vinheriaId)
-            throws ServletException, IOException {
+            throws ServletException, IOException, InvalidDataException {
 
-        String nome   = req.getParameter("nome");
-        String preco  = req.getParameter("preco");
-        String tipo   = req.getParameter("tipo");
-        String estStr = req.getParameter("estoque");
-
-        // Inline validation
+        String nome = req.getParameter("nome");
         if (nome == null || nome.isBlank()) {
-            forwardWithError(req, resp, vinheriaId, "O nome do vinho é obrigatório.");
-            return;
+            throw new InvalidDataException("O nome do vinho é obrigatório.");
         }
 
         Vinho vinho = buildVinhoFromParams(req, vinheriaId);
-
-        try {
-            vinhoService.cadastrarVinho(vinho, vinheriaId);
-            session.setAttribute("successMessage", "Vinho \"" + nome + "\" cadastrado com sucesso!");
-            resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
-        } catch (InvalidDataException e) {
-            forwardWithError(req, resp, vinheriaId, e.getMessage());
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error creating wine", e);
-            forwardWithError(req, resp, vinheriaId, "Erro interno ao cadastrar o vinho. Tente novamente.");
-        }
+        vinhoService.cadastrarVinho(vinho, vinheriaId);
+        
+        session.setAttribute("successMessage", "Vinho \"" + nome + "\" cadastrado com sucesso!");
+        resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
     }
 
     private void handleUpdate(HttpServletRequest req, HttpServletResponse resp,
                                HttpSession session, Long vinheriaId)
-            throws ServletException, IOException {
+            throws ServletException, IOException, InvalidDataException {
 
         String nome = req.getParameter("nome");
         if (nome == null || nome.isBlank()) {
-            forwardWithError(req, resp, vinheriaId, "O nome do vinho é obrigatório.");
-            return;
+            throw new InvalidDataException("O nome do vinho é obrigatório.");
         }
 
         Vinho vinho = buildVinhoFromParams(req, vinheriaId);
-        try {
-            vinhoService.cadastrarVinho(vinho, vinheriaId); // Service handles upsert
-            session.setAttribute("successMessage", "Vinho atualizado com sucesso!");
-            resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
-        } catch (InvalidDataException e) {
-            forwardWithError(req, resp, vinheriaId, e.getMessage());
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error updating wine", e);
-            forwardWithError(req, resp, vinheriaId, "Erro interno ao atualizar o vinho.");
-        }
+        vinhoService.atualizarVinho(vinho, vinheriaId);
+        
+        session.setAttribute("successMessage", "Vinho atualizado com sucesso!");
+        resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
     }
 
     private void handleDelete(HttpServletRequest req, HttpServletResponse resp,
@@ -170,8 +165,8 @@ public class CatalogoServlet extends HttpServlet {
 
         try {
             long vinhoId = Long.parseLong(idParam);
-            // Deactivation (soft delete) via stock update to 0
-            vinhoService.atualizarEstoque(vinhoId, 0);
+            // Deactivation (soft delete) via stock update to 0 with tenant check
+            vinhoService.atualizarEstoque(vinhoId, vinheriaId, 0);
             session.setAttribute("successMessage", "Vinho desativado com sucesso.");
         } catch (NumberFormatException e) {
             session.setAttribute("errorMessage", "ID do vinho inválido.");
@@ -183,13 +178,17 @@ public class CatalogoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/admin/catalogo");
     }
 
-    /** Builds a Vinho instance from form parameters. */
-    private Vinho buildVinhoFromParams(HttpServletRequest req, Long vinheriaId) {
+    /** Builds a Vinho instance from form parameters with validation. */
+    private Vinho buildVinhoFromParams(HttpServletRequest req, Long vinheriaId) throws InvalidDataException {
         Vinho vinho = new Vinho();
 
         String idParam = req.getParameter("id");
         if (idParam != null && !idParam.isBlank()) {
-            vinho.setId(Long.parseLong(idParam));
+            try {
+                vinho.setId(Long.parseLong(idParam));
+            } catch (NumberFormatException e) {
+                throw new InvalidDataException("ID do vinho inválido.");
+            }
         }
 
         vinho.setNome(req.getParameter("nome"));
@@ -204,24 +203,34 @@ public class CatalogoServlet extends HttpServlet {
 
         String tipoParam = req.getParameter("tipo");
         if (tipoParam != null && !tipoParam.isBlank()) {
-            try { vinho.setTipo(TipoVinho.valueOf(tipoParam)); } catch (IllegalArgumentException ignored) {}
+            try { 
+                vinho.setTipo(TipoVinho.valueOf(tipoParam)); 
+            } catch (IllegalArgumentException e) {
+                throw new InvalidDataException("Tipo de vinho inválido.");
+            }
+        } else {
+            throw new InvalidDataException("O tipo do vinho é obrigatório.");
         }
 
-        String estStr = req.getParameter("estoque");
-        if (estStr != null && !estStr.isBlank()) {
-            try { vinho.setEstoque(Integer.parseInt(estStr)); } catch (NumberFormatException ignored) {}
-        }
-
-        String estMinStr = req.getParameter("estoqueMinimo");
-        if (estMinStr != null && !estMinStr.isBlank()) {
-            try { vinho.setEstoqueMinimo(Integer.parseInt(estMinStr)); } catch (NumberFormatException ignored) {}
-        }
+        vinho.setEstoque(parseInteger(req.getParameter("estoque"), "Estoque"));
+        vinho.setEstoqueMinimo(parseInteger(req.getParameter("estoqueMinimo"), "Estoque Mínimo"));
 
         Vinheria v = new Vinheria();
         v.setId(vinheriaId);
         vinho.setVinheria(v);
 
         return vinho;
+    }
+
+    private int parseInteger(String val, String fieldName) throws InvalidDataException {
+        if (val == null || val.isBlank()) return 0;
+        try {
+            int i = Integer.parseInt(val);
+            if (i < 0) throw new InvalidDataException(fieldName + " não pode ser negativo.");
+            return i;
+        } catch (NumberFormatException e) {
+            throw new InvalidDataException(fieldName + " deve ser um número inteiro válido.");
+        }
     }
 
     /** Helper to set error and re-render the catalog form (no redirect). */

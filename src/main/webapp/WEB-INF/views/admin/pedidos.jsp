@@ -81,6 +81,7 @@
                                                   action="${pageContext.request.contextPath}/admin/pedidos"
                                                   style="display:flex;gap:.5rem;align-items:center;">
                                                 <input type="hidden" name="pedidoId" value="${p.id}">
+                                                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                                                 <select name="novoStatus" class="form-control" style="width:auto;padding:.375rem .625rem;font-size:.8125rem;">
                                                     <c:forEach var="s" items="${statusOptions}">
                                                         <option value="${s}" ${p.status == s ? 'selected' : ''}>

@@ -72,6 +72,10 @@ public class QrCodeServlet extends HttpServlet {
         }
 
         UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
+        if (admin == null || admin.getVinheria() == null) {
+             resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+             return;
+        }
         Vinheria vinheria = admin.getVinheria();
 
         String ocasiao = req.getParameter("ocasiao");
@@ -84,18 +88,18 @@ public class QrCodeServlet extends HttpServlet {
         }
 
         try {
-            // Build the sommelier URL the QR code will encode
-            String baseUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort()
-                    + req.getContextPath();
+            // Build the sommelier URL encoding
+            String baseUrl = getPublicBaseUrl(req);
             String ocasiaoEncoded = URLEncoder.encode(ocasiao, StandardCharsets.UTF_8);
             String targetUrl = baseUrl + "/sommelier?slug=" + vinheria.getSlug()
                     + "&ocasiao=" + ocasiaoEncoded;
 
-            // Generate QR image via Google Charts API
+            // Generate QR image via service (which may return base64)
+            String base64Image = qrCodeService.generateQrCodeBase64(targetUrl);
+
+            // Fallback for UI visualization (Google Charts URL)
             String qrApiUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl="
                     + URLEncoder.encode(targetUrl, StandardCharsets.UTF_8);
-
-            String base64Image = qrCodeService.generateQrCodeBase64(targetUrl);
 
             req.setAttribute("qrImageBase64",  base64Image);
             req.setAttribute("qrApiUrl",       qrApiUrl);
@@ -113,5 +117,38 @@ public class QrCodeServlet extends HttpServlet {
         }
 
         req.getRequestDispatcher("/WEB-INF/views/admin/qrcode.jsp").forward(req, resp);
+    }
+
+    /**
+     * Derives the public base URL, favoring PUBLIC_BASE_URL env var,
+     * otherwise falls back to normalized request headers/properties.
+     */
+    private String getPublicBaseUrl(HttpServletRequest req) {
+        String envBase = System.getenv("PUBLIC_BASE_URL");
+        if (envBase != null && !envBase.isBlank()) {
+            return envBase.endsWith("/") ? envBase.substring(0, envBase.length() - 1) : envBase;
+        }
+
+        // Fallback: Derivation from request with proxy header awareness
+        String proto = req.getHeader("X-Forwarded-Proto");
+        if (proto == null) proto = req.getScheme();
+
+        String host = req.getHeader("X-Forwarded-Host");
+        if (host == null) host = req.getServerName();
+
+        String port = req.getHeader("X-Forwarded-Port");
+        if (port == null) port = String.valueOf(req.getServerPort());
+
+        String context = req.getContextPath();
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append(proto).append("://").append(host);
+        
+        if (("http".equals(proto) && !"80".equals(port)) || ("https".equals(proto) && !"443".equals(port))) {
+            sb.append(":").append(port);
+        }
+        
+        sb.append(context);
+        return sb.toString();
     }
 }

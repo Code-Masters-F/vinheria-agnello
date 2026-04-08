@@ -72,4 +72,20 @@ public class PedidoService {
             }
         }
     }
+
+    public List<Pedido> listarPorVinheria(Long vinheriaId) throws SQLException {
+        try (Connection conn = getConnection()) {
+            return pedidoDAO.findByVinheriaId(vinheriaId, conn);
+        }
+    }
+
+    public void atualizarStatus(Long pedidoId, br.com.vinheiro.model.enums.StatusPedido status, Long vinheriaId) throws Exception {
+        try (Connection conn = getConnection()) {
+            Optional<Pedido> op = pedidoDAO.findById(pedidoId, conn);
+            if (op.isEmpty() || !op.get().getVinheriaId().equals(vinheriaId)) {
+                throw new Exception("Pedido não encontrado ou não autorizado.");
+            }
+            pedidoDAO.updateStatus(pedidoId, status, conn);
+        }
+    }
 }

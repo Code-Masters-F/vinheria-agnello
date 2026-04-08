@@ -67,39 +67,7 @@ public class VinhoDAO {
         String sql = "INSERT INTO vinho (vinheria_id, nome, tipo, uva, pais, regiao, safra, preco, descricao, foto_url, estoque, estoque_minimo, ativo) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setLong(1, vinho.getVinheria().getId());
-            stmt.setString(2, vinho.getNome());
-            stmt.setString(3, vinho.getTipo().name());
-            stmt.setString(4, vinho.getUva());
-            stmt.setString(5, vinho.getPais());
-            stmt.setString(6, vinho.getRegiao());
-            
-            if (vinho.getSafra() != null && !vinho.getSafra().trim().isEmpty()) {
-                try {
-                    stmt.setInt(7, Integer.parseInt(vinho.getSafra()));
-                } catch (NumberFormatException e) {
-                    stmt.setNull(7, Types.INTEGER);
-                }
-            } else {
-                stmt.setNull(7, Types.INTEGER);
-            }
-            
-            if (vinho.getPreco() != null && !vinho.getPreco().trim().isEmpty()) {
-                try {
-                    stmt.setDouble(8, Double.parseDouble(vinho.getPreco()));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid price format: " + vinho.getPreco());
-                }
-            } else {
-                stmt.setNull(8, Types.DOUBLE);
-            }
-            
-            stmt.setString(9, vinho.getDescricao());
-            stmt.setString(10, vinho.getFotoUrl());
-            stmt.setInt(11, vinho.getEstoque());
-            stmt.setInt(12, vinho.getEstoqueMinimo());
-            stmt.setBoolean(13, vinho.isAtivo());
-            
+            setParameterValues(stmt, vinho);
             stmt.executeUpdate();
             
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -108,6 +76,55 @@ public class VinhoDAO {
                 }
             }
         }
+    }
+
+    public void update(Vinho vinho, Connection conn) throws SQLException {
+        if (vinho.getId() == null) {
+            throw new IllegalArgumentException("Vinho ID must not be null for update");
+        }
+        String sql = "UPDATE vinho SET vinheria_id = ?, nome = ?, tipo = ?, uva = ?, pais = ?, regiao = ?, safra = ?, preco = ?, descricao = ?, foto_url = ?, estoque = ?, estoque_minimo = ?, ativo = ? " +
+                     "WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            int i = setParameterValues(stmt, vinho);
+            stmt.setLong(i, vinho.getId());
+            stmt.executeUpdate();
+        }
+    }
+
+    private int setParameterValues(PreparedStatement stmt, Vinho vinho) throws SQLException {
+        stmt.setLong(1, vinho.getVinheria().getId());
+        stmt.setString(2, vinho.getNome());
+        stmt.setString(3, vinho.getTipo().name());
+        stmt.setString(4, vinho.getUva());
+        stmt.setString(5, vinho.getPais());
+        stmt.setString(6, vinho.getRegiao());
+        
+        if (vinho.getSafra() != null && !vinho.getSafra().trim().isEmpty()) {
+            try {
+                stmt.setInt(7, Integer.parseInt(vinho.getSafra()));
+            } catch (NumberFormatException e) {
+                stmt.setNull(7, Types.INTEGER);
+            }
+        } else {
+            stmt.setNull(7, Types.INTEGER);
+        }
+        
+        if (vinho.getPreco() != null && !vinho.getPreco().trim().isEmpty()) {
+            try {
+                stmt.setDouble(8, Double.parseDouble(vinho.getPreco()));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid price format: " + vinho.getPreco());
+            }
+        } else {
+            stmt.setNull(8, Types.DOUBLE);
+        }
+        
+        stmt.setString(9, vinho.getDescricao());
+        stmt.setString(10, vinho.getFotoUrl());
+        stmt.setInt(11, vinho.getEstoque());
+        stmt.setInt(12, vinho.getEstoqueMinimo());
+        stmt.setBoolean(13, vinho.isAtivo());
+        return 14;
     }
 
     public void updateEstoque(Long id, int novoEstoque, Connection conn) throws SQLException {
