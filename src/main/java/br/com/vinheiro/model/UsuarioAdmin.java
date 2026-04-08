@@ -1,6 +1,5 @@
 package br.com.vinheiro.model;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 public class UsuarioAdmin {
@@ -9,7 +8,7 @@ public class UsuarioAdmin {
     private String nome;
     private String email;
     private String senhaHash;
-    private Timestamp criadoEm;
+    private LocalDateTime criadoEm;
 
     public UsuarioAdmin() {}
 
@@ -18,7 +17,7 @@ public class UsuarioAdmin {
         this.vinheria = vinheria;
         this.nome = nome;
         this.senhaHash = senhaHash;
-        this.criadoEm = Timestamp.valueOf(LocalDateTime.now());
+        this.criadoEm = LocalDateTime.now();
     }
 
     public long getId() {
@@ -61,11 +60,11 @@ public class UsuarioAdmin {
         this.senhaHash = senhaHash;
     }
 
-    public Timestamp getCriadoEm() {
+    public LocalDateTime getCriadoEm() {
         return criadoEm;
     }
 
-    public void setCriadoEm(Timestamp criadoEm) {
+    public void setCriadoEm(LocalDateTime criadoEm) {
         this.criadoEm = criadoEm;
     }
 }

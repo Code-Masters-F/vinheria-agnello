@@ -69,3 +69,5 @@ lib/
 # IA
 .agent
 .specify
+spec.md
+specs/
