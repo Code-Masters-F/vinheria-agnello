@@ -52,6 +52,15 @@ public class CampanhaDAO {
         }
     }
 
+    public void atualizarStatus(Long id, StatusCampanha status, Connection conn) throws SQLException {
+        String sql = "UPDATE campanha SET status = ? WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, status.name());
+            stmt.setLong(2, id);
+            stmt.executeUpdate();
+        }
+    }
+
     private Campanha mapRow(ResultSet rs) throws SQLException {
         Campanha c = new Campanha();
         c.setId(rs.getLong("id"));
