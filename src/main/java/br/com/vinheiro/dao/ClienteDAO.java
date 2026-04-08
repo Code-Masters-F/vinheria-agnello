@@ -6,8 +6,11 @@ import br.com.vinheiro.model.enums.TipoCadastro;
 
 import java.sql.*;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClienteDAO {
+    private static final Logger LOGGER = Logger.getLogger(ClienteDAO.class.getName());
 
     public Optional<Cliente> findById(Long id, Connection conn) throws SQLException {
         String sql = "SELECT * FROM cliente WHERE id = ?";
@@ -33,7 +36,11 @@ public class ClienteDAO {
             stmt.setString(5, cliente.getCpf());
             stmt.setString(6, cliente.getEndereco());
             stmt.setString(7, cliente.getSenhaHash());
-            stmt.setString(8, cliente.getTipoCadastro().name());
+            if (cliente.getTipoCadastro() != null) {
+                stmt.setString(8, cliente.getTipoCadastro().name());
+            } else {
+                stmt.setNull(8, Types.VARCHAR);
+            }
             stmt.setInt(9, cliente.getPontos());
             
             stmt.executeUpdate();
@@ -63,7 +70,9 @@ public class ClienteDAO {
         if (tipoStr != null) {
             try {
                 cliente.setTipoCadastro(TipoCadastro.valueOf(tipoStr.toUpperCase()));
-            } catch(IllegalArgumentException e) { }
+            } catch(IllegalArgumentException e) {
+                LOGGER.log(Level.SEVERE, "Invalid TipoCadastro value: {0} for cliente id: {1}", new Object[]{tipoStr, cliente.getId()});
+            }
         }
         
         cliente.setPontos(rs.getInt("pontos"));

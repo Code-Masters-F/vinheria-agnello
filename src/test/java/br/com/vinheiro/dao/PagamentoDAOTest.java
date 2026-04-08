@@ -1,6 +1,8 @@
 package br.com.vinheiro.dao;
 
 import br.com.vinheiro.model.Pagamento;
+import br.com.vinheiro.model.enums.MetodoPagamento;
+import br.com.vinheiro.model.enums.StatusPagamento;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,11 +18,13 @@ public class PagamentoDAOTest extends BaseDAOTest {
         
         pagamento.setPedidoId(101L);
         pagamento.setValor(new BigDecimal("200.00"));
-        // we might not have these enums defined directly in our mocked file, assume they exist based on schema constraints
-        // wait, we can just use the provided values if they are known, or leave them null if we aren't sure
+        pagamento.setMetodo(MetodoPagamento.cartao_credito);
+        pagamento.setStatus(StatusPagamento.aprovado);
         
         dao.save(pagamento, connection);
 
+        Assertions.assertNotNull(pagamento);
+        Assertions.assertNotNull(pagamento.getId());
         Assertions.assertTrue(pagamento.getId() > 0);
 
         Optional<Pagamento> found = dao.findById(pagamento.getId(), connection);

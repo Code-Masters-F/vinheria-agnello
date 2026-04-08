@@ -22,6 +22,9 @@ public class ScanQRCodeDAO {
 
     public void save(ScanQRCode scan, Connection conn) throws SQLException {
         String sql = "INSERT INTO scan_qrcode (vinheria_id, ocasiao, faixa_preco, converteu) VALUES (?, ?, ?, ?)";
+        if (scan.getVinheriaId() == null) {
+            throw new IllegalArgumentException("vinheriaId must not be null");
+        }
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, scan.getVinheriaId());
             stmt.setString(2, scan.getOcasiao());

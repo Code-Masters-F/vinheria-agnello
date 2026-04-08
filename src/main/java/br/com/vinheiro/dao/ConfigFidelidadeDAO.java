@@ -34,21 +34,7 @@ public class ConfigFidelidadeDAO {
     }
 
     public void save(ConfigFidelidade config, Connection conn) throws SQLException {
-        // Assume upsert or just insert since it shares PK with Vinheria
-
-        // Emulando ON DUPLICATE KEY pra usar no H2/MySQL
-        
-        // Let's use standard insert, and a separate update if needed, but MERGE works in H2, OR we can check if exists.
-        Optional<ConfigFidelidade> existing = findByVinheriaId(config.getVinheriaId(), conn);
-        if (existing.isPresent()) {
-            update(config, conn);
-        } else {
-            insert(config, conn);
-        }
-    }
-    
-    private void insert(ConfigFidelidade config, Connection conn) throws SQLException {
-        String sql = "INSERT INTO config_fidelidade (vinheria_id, pontos_por_real, validade_dias, recompensas) VALUES (?, ?, ?, ?)";
+        String sql = "MERGE INTO config_fidelidade (vinheria_id, pontos_por_real, validade_dias, recompensas) KEY(vinheria_id) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, config.getVinheriaId());
             stmt.setBigDecimal(2, config.getPontosPorReal());
@@ -59,17 +45,7 @@ public class ConfigFidelidadeDAO {
         }
     }
     
-    private void update(ConfigFidelidade config, Connection conn) throws SQLException {
-        String sql = "UPDATE config_fidelidade SET pontos_por_real = ?, validade_dias = ?, recompensas = ? WHERE vinheria_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setBigDecimal(1, config.getPontosPorReal());
-            if (config.getValidadeDias() != null) stmt.setInt(2, config.getValidadeDias());
-            else stmt.setNull(2, Types.INTEGER);
-            stmt.setString(3, config.getRecompensas());
-            stmt.setLong(4, config.getVinheriaId());
-            stmt.executeUpdate();
-        }
-    }
+
 
     private ConfigFidelidade mapRow(ResultSet rs) throws SQLException {
         ConfigFidelidade c = new ConfigFidelidade();

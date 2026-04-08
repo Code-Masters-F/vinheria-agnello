@@ -44,13 +44,21 @@ public class UsuarioAdminDAO {
      * Saves a new UsuarioAdmin to the database.
      */
     public void save(UsuarioAdmin admin, Connection conn) throws SQLException {
+        if (admin.getVinheria() == null || admin.getVinheria().getId() == null) {
+            throw new IllegalArgumentException("Vinheria and Vinheria ID must not be null");
+        }
         String sql = "INSERT INTO usuario_admin (vinheria_id, nome, email, senha_hash, criado_em) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, admin.getVinheria().getId());
             stmt.setString(2, admin.getNome());
             stmt.setString(3, admin.getEmail());
             stmt.setString(4, admin.getSenhaHash());
-            stmt.setTimestamp(5, admin.getCriadoEm());
+            
+            if (admin.getCriadoEm() != null) {
+                stmt.setTimestamp(5, Timestamp.valueOf(admin.getCriadoEm()));
+            } else {
+                stmt.setNull(5, Types.TIMESTAMP);
+            }
             
             stmt.executeUpdate();
             
@@ -62,6 +70,10 @@ public class UsuarioAdminDAO {
         }
     }
 
+    /**
+     * Maps a database row to a UsuarioAdmin instance.
+     * Note: The Vinheria instance associated with the admin is a stub with only the ID populated.
+     */
     private UsuarioAdmin mapRow(ResultSet rs) throws SQLException {
         UsuarioAdmin admin = new UsuarioAdmin();
         admin.setId(rs.getLong("id"));
@@ -73,7 +85,11 @@ public class UsuarioAdminDAO {
         admin.setNome(rs.getString("nome"));
         admin.setEmail(rs.getString("email"));
         admin.setSenhaHash(rs.getString("senha_hash"));
-        admin.setCriadoEm(rs.getTimestamp("criado_em"));
+        
+        Timestamp criadoEm = rs.getTimestamp("criado_em");
+        if (criadoEm != null) {
+            admin.setCriadoEm(criadoEm.toLocalDateTime());
+        }
         return admin;
     }
 }

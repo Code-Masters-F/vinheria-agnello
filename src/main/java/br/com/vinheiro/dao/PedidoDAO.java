@@ -6,6 +6,8 @@ import br.com.vinheiro.model.enums.TipoEntrega;
 
 import java.sql.*;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * PedidoDAO - Data Access Object for the Pedido entity.
@@ -22,6 +24,7 @@ import java.util.Optional;
  * This strategy isolates latency optimizations and keeps caching policies distinct per entity.
  */
 public class PedidoDAO {
+    private static final Logger LOGGER = Logger.getLogger(PedidoDAO.class.getName());
 
     public Optional<Pedido> findById(Long id, Connection conn) throws SQLException {
         String sql = "SELECT * FROM pedido WHERE id = ?";
@@ -46,7 +49,11 @@ public class PedidoDAO {
             else stmt.setNull(2, Types.BIGINT);
             
             stmt.setString(3, pedido.getStatus() != null ? pedido.getStatus().name() : StatusPedido.aguardando_pagamento.name());
-            stmt.setString(4, pedido.getTipoEntrega().name());
+            if (pedido.getTipoEntrega() != null) {
+                stmt.setString(4, pedido.getTipoEntrega().name());
+            } else {
+                stmt.setNull(4, Types.VARCHAR);
+            }
             stmt.setBigDecimal(5, pedido.getSubtotal());
             stmt.setBigDecimal(6, pedido.getTotal());
             stmt.setString(7, pedido.getEnderecoEntrega());
@@ -75,14 +82,18 @@ public class PedidoDAO {
         if (statusStr != null) {
             try {
                 pedido.setStatus(StatusPedido.valueOf(statusStr));
-            } catch(IllegalArgumentException e) { }
+            } catch(IllegalArgumentException e) {
+                LOGGER.log(Level.SEVERE, "Invalid StatusPedido value: {0} for pedido id: {1}", new Object[]{statusStr, pedido.getId()});
+            }
         }
         
         String tipoEntregaStr = rs.getString("tipo_entrega");
         if (tipoEntregaStr != null) {
             try {
                 pedido.setTipoEntrega(TipoEntrega.valueOf(tipoEntregaStr));
-            } catch(IllegalArgumentException e) { }
+            } catch(IllegalArgumentException e) {
+                LOGGER.log(Level.SEVERE, "Invalid TipoEntrega value: {0} for pedido id: {1}", new Object[]{tipoEntregaStr, pedido.getId()});
+            }
         }
         
         pedido.setSubtotal(rs.getBigDecimal("subtotal"));

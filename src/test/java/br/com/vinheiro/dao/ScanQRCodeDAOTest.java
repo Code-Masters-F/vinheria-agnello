@@ -17,6 +17,8 @@ public class ScanQRCodeDAOTest extends BaseDAOTest {
 
         dao.save(scan, connection);
 
+        Assertions.assertNotNull(scan);
+        Assertions.assertNotNull(scan.getId());
         Assertions.assertTrue(scan.getId() > 0);
 
         Optional<ScanQRCode> found = dao.findById(scan.getId(), connection);

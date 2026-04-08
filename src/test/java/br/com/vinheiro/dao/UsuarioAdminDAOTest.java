@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Statement;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public class UsuarioAdminDAOTest extends BaseDAOTest {
@@ -20,7 +20,6 @@ public class UsuarioAdminDAOTest extends BaseDAOTest {
         dao = new UsuarioAdminDAO();
         testVinheria = new Vinheria();
         
-        // Insert a test vinheria first because of the foreign key (if it was enforced, though our test DB schema above doesn't add FK constraints)
         try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate("INSERT INTO vinheria (nome, slug) VALUES ('Test Vinheria', 'test-vinheria')", Statement.RETURN_GENERATED_KEYS);
             try (var rs = stmt.getGeneratedKeys()) {
@@ -38,10 +37,11 @@ public class UsuarioAdminDAOTest extends BaseDAOTest {
         admin.setNome("Admin Test");
         admin.setEmail("admin@test.com");
         admin.setSenhaHash("hashed123");
-        admin.setCriadoEm(new Timestamp(System.currentTimeMillis()));
+        admin.setCriadoEm(LocalDateTime.now());
 
         dao.save(admin, connection);
 
+        Assertions.assertNotNull(admin.getId());
         Assertions.assertTrue(admin.getId() > 0, "ID should be generated");
 
         Optional<UsuarioAdmin> found = dao.findById(admin.getId(), connection);
@@ -57,7 +57,7 @@ public class UsuarioAdminDAOTest extends BaseDAOTest {
         admin.setNome("Admin Test 2");
         admin.setEmail("admin2@test.com");
         admin.setSenhaHash("hashed123");
-        admin.setCriadoEm(new Timestamp(System.currentTimeMillis()));
+        admin.setCriadoEm(LocalDateTime.now());
 
         dao.save(admin, connection);
 

@@ -18,6 +18,8 @@ public class AvaliacaoVinhoDAOTest extends BaseDAOTest {
         
         dao.save(avaliacao, connection);
 
+        Assertions.assertNotNull(avaliacao);
+        Assertions.assertNotNull(avaliacao.getId());
         Assertions.assertTrue(avaliacao.getId() > 0);
 
         Optional<AvaliacaoVinho> found = dao.findById(avaliacao.getId(), connection);

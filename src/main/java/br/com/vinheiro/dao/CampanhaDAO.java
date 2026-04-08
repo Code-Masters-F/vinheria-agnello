@@ -6,8 +6,11 @@ import br.com.vinheiro.model.enums.StatusCampanha;
 
 import java.sql.*;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CampanhaDAO {
+    private static final Logger LOGGER = Logger.getLogger(CampanhaDAO.class.getName());
 
     public Optional<Campanha> findById(Long id, Connection conn) throws SQLException {
         String sql = "SELECT * FROM campanha WHERE id = ?";
@@ -25,7 +28,7 @@ public class CampanhaDAO {
     public void save(Campanha campanha, Connection conn) throws SQLException {
         String sql = "INSERT INTO campanha (vinheria_id, nome, mensagem, filtro_tipo, canal, status, enviada_em) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setLong(1, campanha.getVinheriaId());
+            stmt.setObject(1, campanha.getVinheriaId(), Types.BIGINT);
             stmt.setString(2, campanha.getNome());
             stmt.setString(3, campanha.getMensagem());
             stmt.setString(4, campanha.getFiltroTipo());
@@ -61,14 +64,18 @@ public class CampanhaDAO {
         if (canalStr != null) {
             try {
                 c.setCanal(CanalCampanha.valueOf(canalStr));
-            } catch(IllegalArgumentException e) { }
+            } catch(IllegalArgumentException e) {
+                LOGGER.log(Level.SEVERE, "Invalid CanalCampanha value: {0} for campanha id: {1}", new Object[]{canalStr, c.getId()});
+            }
         }
         
         String statusStr = rs.getString("status");
         if (statusStr != null) {
             try {
                 c.setStatus(StatusCampanha.valueOf(statusStr));
-            } catch(IllegalArgumentException e) { }
+            } catch(IllegalArgumentException e) {
+                LOGGER.log(Level.SEVERE, "Invalid StatusCampanha value: {0} for campanha id: {1}", new Object[]{statusStr, c.getId()});
+            }
         }
         
         Timestamp enviadaEm = rs.getTimestamp("enviada_em");

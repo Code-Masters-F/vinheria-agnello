@@ -47,7 +47,9 @@ public abstract class BaseDAOTest {
 
     private void createSchema() throws Exception {
         try (Statement stmt = connection.createStatement()) {
-            // Simplified schema creation for testing
+            // Simplified schema creation for testing.
+            // Note: Foreign key constraints are intentionally omitted to simplify the in-memory/test schema.
+            // Tests do not validate referential integrity here; these should be covered by dedicated integration tests.
             stmt.execute("CREATE TABLE IF NOT EXISTS vinheria (" +
                     "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
                     "nome VARCHAR(100) NOT NULL, " +

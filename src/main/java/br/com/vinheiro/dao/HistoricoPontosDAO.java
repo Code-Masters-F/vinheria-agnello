@@ -23,13 +23,13 @@ public class HistoricoPontosDAO {
     public void save(HistoricoPontos historico, Connection conn) throws SQLException {
         String sql = "INSERT INTO historico_pontos (cliente_id, pedido_id, pontos, descricao) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setLong(1, historico.getClienteId());
+            stmt.setObject(1, historico.getClienteId(), Types.BIGINT);
             
             if (historico.getPedidoId() != null) stmt.setLong(2, historico.getPedidoId());
             else stmt.setNull(2, Types.BIGINT);
             
             if (historico.getPontos() != null) stmt.setInt(3, historico.getPontos());
-            else stmt.setInt(3, 0);
+            else stmt.setNull(3, Types.INTEGER);
             
             stmt.setString(4, historico.getDescricao());
             

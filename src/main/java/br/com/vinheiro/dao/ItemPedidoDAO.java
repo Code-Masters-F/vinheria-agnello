@@ -38,6 +38,9 @@ public class ItemPedidoDAO {
 
     public void save(ItemPedido item, Connection conn) throws SQLException {
         String sql = "INSERT INTO item_pedido (pedido_id, vinho_id, quantidade, preco_unit) VALUES (?, ?, ?, ?)";
+        if (item.getPedidoId() == null || item.getVinhoId() == null || item.getQuantidade() == null) {
+            throw new IllegalArgumentException("Pedido ID, Vinho ID and Quantidade must not be null");
+        }
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, item.getPedidoId());
             stmt.setLong(2, item.getVinhoId());

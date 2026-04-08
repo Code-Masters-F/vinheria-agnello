@@ -27,6 +27,7 @@ public class ConfigFidelidadeDAOTest extends BaseDAOTest {
         dao.save(config, connection);
         
         Optional<ConfigFidelidade> foundUpdated = dao.findByVinheriaId(777L, connection);
+        Assertions.assertTrue(foundUpdated.isPresent());
         Assertions.assertEquals("15 pontos = 1 real", foundUpdated.get().getRecompensas());
     }
 }

@@ -15,11 +15,12 @@ public class CampanhaDAOTest extends BaseDAOTest {
         Campanha campanha = new Campanha(null, "Promoção Inverno", "tipo_novo_cliente");
         campanha.setVinheriaId(404L);
         campanha.setMensagem("Aproveite nossos vinhos de inverno com 20% OFF.");
-        // Assume StatusCampanha enum contains something like rascunho
         campanha.setStatus(StatusCampanha.rascunho);
 
         dao.save(campanha, connection);
 
+        Assertions.assertNotNull(campanha);
+        Assertions.assertNotNull(campanha.getId());
         Assertions.assertTrue(campanha.getId() > 0);
 
         Optional<Campanha> found = dao.findById(campanha.getId(), connection);

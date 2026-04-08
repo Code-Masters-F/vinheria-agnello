@@ -23,8 +23,8 @@ public class AvaliacaoVinhoDAO {
     public void save(AvaliacaoVinho avaliacao, Connection conn) throws SQLException {
         String sql = "INSERT INTO avaliacao_vinho (cliente_id, vinho_id, nota, ocasiao) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setLong(1, avaliacao.getClienteId());
-            stmt.setLong(2, avaliacao.getVinhoId());
+            stmt.setObject(1, avaliacao.getClienteId(), Types.BIGINT);
+            stmt.setObject(2, avaliacao.getVinhoId(), Types.BIGINT);
             
             if (avaliacao.getNota() != null) stmt.setInt(3, avaliacao.getNota());
             else stmt.setNull(3, Types.INTEGER);
