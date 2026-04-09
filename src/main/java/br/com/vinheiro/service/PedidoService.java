@@ -12,6 +12,7 @@ import br.com.vinheiro.service.exceptions.InsufficientStockException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class PedidoService {
@@ -69,6 +70,25 @@ public class PedidoService {
                 throw e;
             } finally {
                 conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    public List<Pedido> listarPorVinheria(Long vinheriaId) throws SQLException {
+        try (Connection conn = getConnection()) {
+            return pedidoDAO.findByVinheriaId(vinheriaId, conn);
+        }
+    }
+
+    public void atualizarStatus(Long pedidoId, br.com.vinheiro.model.enums.StatusPedido status, Long vinheriaId) throws Exception {
+        try (Connection conn = getConnection()) {
+            Optional<Pedido> op = pedidoDAO.findById(pedidoId, conn);
+            if (op.isEmpty() || !Objects.equals(op.get().getVinheriaId(), vinheriaId)) {
+                throw new Exception("Pedido não encontrado ou não autorizado.");
+            }
+            int affected = pedidoDAO.updateStatus(pedidoId, status, conn);
+            if (affected == 0) {
+                throw new Exception("Nenhum pedido foi atualizado.");
             }
         }
     }

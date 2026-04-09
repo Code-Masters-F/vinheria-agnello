@@ -61,21 +61,24 @@ public class VinhoServiceTest {
 
     @Test
     void atualizarEstoque_WhenEstoqueBecomesZero_ShouldDeactivateVinho() throws Exception {
+        Long vinheriaId = 1L;
         Vinho vinho = new Vinho();
         vinho.setId(1L);
         vinho.setEstoque(10);
         vinho.setAtivo(true);
+        Vinheria v = new Vinheria();
+        v.setId(vinheriaId);
+        vinho.setVinheria(v);
 
         when(vinhoDAO.findById(eq(1L), any(Connection.class))).thenReturn(Optional.of(vinho));
 
         // When stock goes to 0
-        vinhoService.atualizarEstoque(1L, 0);
+        vinhoService.atualizarEstoque(1L, vinheriaId, 0);
 
         // Should update stock explicitly or implicitly save
         // But importantly, the object must be marked active = false
         assertFalse(vinho.isAtivo());
-        // Since we update the object, the service should theoretically call save or update
-        // We will assert save was called
-        verify(vinhoDAO).save(vinho, connection);
+        // Since we update the object, the service should call update
+        verify(vinhoDAO).update(vinho, connection);
     }
 }

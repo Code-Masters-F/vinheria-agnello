@@ -17,7 +17,7 @@
     <!-- Encoding padrão UTF-8 -->
     <filter>
         <filter-name>CharacterEncodingFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+        <filter-class>br.com.vinheiro.filter.CharacterEncodingFilter</filter-class>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>
@@ -47,5 +47,69 @@
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
+
+    <!-- =========================================================
+         Admin Panel Servlets
+         ========================================================= -->
+    <servlet>
+        <servlet-name>DashboardServlet</servlet-name>
+        <servlet-class>br.com.vinheiro.servlet.admin.DashboardServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DashboardServlet</servlet-name>
+        <url-pattern>/admin/dashboard</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DashboardServlet</servlet-name>
+        <url-pattern>/admin/</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CatalogoServlet</servlet-name>
+        <servlet-class>br.com.vinheiro.servlet.admin.CatalogoServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CatalogoServlet</servlet-name>
+        <url-pattern>/admin/catalogo</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>PedidosServlet</servlet-name>
+        <servlet-class>br.com.vinheiro.servlet.admin.PedidosServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PedidosServlet</servlet-name>
+        <url-pattern>/admin/pedidos</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RelatoriosServlet</servlet-name>
+        <servlet-class>br.com.vinheiro.servlet.admin.RelatoriosServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RelatoriosServlet</servlet-name>
+        <url-pattern>/admin/relatorios</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>QrCodeServlet</servlet-name>
+        <servlet-class>br.com.vinheiro.servlet.admin.QrCodeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>QrCodeServlet</servlet-name>
+        <url-pattern>/admin/qrcode</url-pattern>
+    </servlet-mapping>
+
+    <!-- =========================================================
+         Custom Error Pages
+         ========================================================= -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/views/admin/errors/error-404.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/views/admin/errors/error-500.jsp</location>
+    </error-page>
 
 </web-app>

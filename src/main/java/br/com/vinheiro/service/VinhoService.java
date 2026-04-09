@@ -35,18 +35,7 @@ public class VinhoService {
      * Cadastra um novo Vinho aplicando regras de negócio e validações.
      */
     public void cadastrarVinho(Vinho vinho, Long vinheriaId) throws InvalidDataException {
-        if (vinho.getPreco() != null) {
-            try {
-                BigDecimal preco = new BigDecimal(vinho.getPreco());
-                if (preco.compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new InvalidDataException("The price must be greater than zero.");
-                }
-            } catch (NumberFormatException e) {
-                throw new InvalidDataException("Invalid price format.");
-            }
-        } else {
-            throw new InvalidDataException("Price cannot be null.");
-        }
+        validarPreco(vinho.getPreco());
 
         Vinheria v = new Vinheria();
         v.setId(vinheriaId);
@@ -56,41 +45,68 @@ public class VinhoService {
             vinhoDAO.save(vinho, conn);
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error saving Vinho: " + e.getMessage(), e);
-            throw new RuntimeException("Database error during Vinho creation.", e);
+            throw new RuntimeException("Erro de banco ao cadastrar o vinho.", e);
         } catch (IllegalArgumentException e) {
             throw new InvalidDataException(e.getMessage());
         }
     }
 
     /**
-     * Atualiza o estoque de um vinho.
-     * Caso o estoque chegue a zero, desativa o item automaticamente.
+     * Atualiza um Vinho existente após validar a propriedade (tenant safety).
      */
-    public void atualizarEstoque(Long vinhoId, int novaQuantidade) throws Exception {
+    public void atualizarVinho(Vinho vinho, Long vinheriaId) throws InvalidDataException {
+        validarPreco(vinho.getPreco());
+
         try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false); // Transacional pois pode envolver update de status
+            Optional<Vinho> existing = vinhoDAO.findById(vinho.getId(), conn);
+            if (existing.isEmpty() || !existing.get().getVinheria().getId().equals(vinheriaId)) {
+                throw new InvalidDataException("Vinho não encontrado ou não pertence a esta adega.");
+            }
+
+            Vinheria v = new Vinheria();
+            v.setId(vinheriaId);
+            vinho.setVinheria(v);
+
+            vinhoDAO.update(vinho, conn);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error updating Vinho: " + e.getMessage(), e);
+            throw new RuntimeException("Erro de banco ao atualizar o vinho.", e);
+        }
+    }
+
+    private void validarPreco(String precoStr) throws InvalidDataException {
+        if (precoStr == null || precoStr.isBlank()) {
+            throw new InvalidDataException("O preço é obrigatório.");
+        }
+        try {
+            BigDecimal preco = new BigDecimal(precoStr);
+            if (preco.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new InvalidDataException("O preço deve ser maior que zero.");
+            }
+        } catch (NumberFormatException e) {
+            throw new InvalidDataException("Formato de preço inválido.");
+        }
+    }
+
+    /**
+     * Atualiza o estoque de um vinho verificando a propriedade do tenant.
+     */
+    public void atualizarEstoque(Long vinhoId, Long vinheriaId, int novaQuantidade) throws Exception {
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
             try {
                 Optional<Vinho> optionalVinho = vinhoDAO.findById(vinhoId, conn);
-                if (optionalVinho.isPresent()) {
-                    Vinho vinho = optionalVinho.get();
-                    vinho.setEstoque(novaQuantidade);
-                    
-                    if (novaQuantidade <= 0) {
-                        vinho.setAtivo(false);
-                    }
-                    
-                    // We call save, assuming save acts as update id if existing or updateEstoque
-                    // The DAO only has insert save, so we need to either update save logic or do it.
-                    // Wait, VinhoDAO.save does insert. If we want to save active status, we need a separate DAO method or update save.
-                    // For the sake of the test, we'll invoke save and expect the DAO would handle it.
-                    // Actually, let's look at VinhoDAO: it has updateEstoque. 
-                    // But updateEstoque in DAO does `UPDATE vinho SET estoque = ? WHERE id = ?`. It doesn't update `ativo`.
-                    // We must tell DAO to save or update the full vinho or add an update method to DAO.
-                    // In a simple architecture, we could just say vinhoDAO.save(vinho, conn) if save handles updates, but it doesn't.
-                    // Let's assume we call save() for the test to pass, but in reality we should add update() to DAO.
-                    // Since I cannot change DAO easily without tasks, I'll just call save.
-                    vinhoDAO.save(vinho, conn);
+                if (optionalVinho.isEmpty() || !optionalVinho.get().getVinheria().getId().equals(vinheriaId)) {
+                    throw new InvalidDataException("Vinho não encontrado ou acesso não autorizado.");
                 }
+
+                Vinho vinho = optionalVinho.get();
+                vinho.setEstoque(novaQuantidade);
+                if (novaQuantidade <= 0) {
+                    vinho.setAtivo(false);
+                }
+                
+                vinhoDAO.update(vinho, conn);
                 conn.commit();
             } catch (Exception e) {
                 conn.rollback();
@@ -99,6 +115,21 @@ public class VinhoService {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    public Optional<Vinho> findById(Long id, Long vinheriaId) {
+        try (Connection conn = getConnection()) {
+            Optional<Vinho> v = vinhoDAO.findById(id, conn);
+            if (v.isPresent() && 
+                v.get().getVinheria() != null && 
+                v.get().getVinheria().getId() != null && 
+                v.get().getVinheria().getId().equals(vinheriaId)) {
+                return v;
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error finding Vinho: " + e.getMessage(), e);
+        }
+        return Optional.empty();
     }
 
     public List<Vinho> listarDisponiveis(Long vinheriaId) {
