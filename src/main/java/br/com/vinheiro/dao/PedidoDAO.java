@@ -53,12 +53,12 @@ public class PedidoDAO {
         return pedidos;
     }
 
-    public void updateStatus(Long id, StatusPedido status, Connection conn) throws SQLException {
+    public int updateStatus(Long id, StatusPedido status, Connection conn) throws SQLException {
         String sql = "UPDATE pedido SET status = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, status.name());
             stmt.setLong(2, id);
-            stmt.executeUpdate();
+            return stmt.executeUpdate();
         }
     }
 

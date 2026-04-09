@@ -28,18 +28,15 @@ import java.util.List;
 public class DashboardServlet extends HttpServlet {
 
     private VinhoService vinhoService;
-    private PedidoService pedidoService;
 
     @Override
     public void init() throws ServletException {
         this.vinhoService = new VinhoService();
-        this.pedidoService = new PedidoService();
     }
 
     /* Package-private constructor for testability (Mockito injection). */
-    DashboardServlet(VinhoService vinhoService, PedidoService pedidoService) {
+    DashboardServlet(VinhoService vinhoService) {
         this.vinhoService = vinhoService;
-        this.pedidoService = pedidoService;
     }
 
     public DashboardServlet() {}

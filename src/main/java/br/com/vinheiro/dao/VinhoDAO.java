@@ -82,6 +82,9 @@ public class VinhoDAO {
         if (vinho.getId() == null) {
             throw new IllegalArgumentException("Vinho ID must not be null for update");
         }
+        if (vinho.getVinheria() == null || vinho.getVinheria().getId() == null) {
+            throw new IllegalArgumentException("Vinheria and Vinheria ID must not be null for update");
+        }
         String sql = "UPDATE vinho SET vinheria_id = ?, nome = ?, tipo = ?, uva = ?, pais = ?, regiao = ?, safra = ?, preco = ?, descricao = ?, foto_url = ?, estoque = ?, estoque_minimo = ?, ativo = ? " +
                      "WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {

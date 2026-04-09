@@ -17,8 +17,8 @@ import java.util.logging.Logger;
 /**
  * PedidosServlet — Controller for Admin Order Management page.
  *
- * GET  /admin/pedidos        → list orders for the current tenant
- * POST /admin/pedidos/status → update a single order's status
+ * GET  /admin/pedidos → list orders for the current tenant
+ * POST /admin/pedidos → update a single order's status
  */
 @WebServlet(name = "PedidosServlet", urlPatterns = "/admin/pedidos")
 public class PedidosServlet extends HttpServlet {
@@ -109,20 +109,27 @@ public class PedidosServlet extends HttpServlet {
         String pedidoIdStr = req.getParameter("pedidoId");
         String novoStatus  = req.getParameter("novoStatus");
 
-        if (pedidoIdStr == null || pedidoIdStr.isBlank()) {
-            session.setAttribute("errorMessage", "ID do pedido não informado.");
+        if (novoStatus == null || novoStatus.isBlank()) {
+            session.setAttribute("errorMessage", "Status não informado.");
             resp.sendRedirect(req.getRequestURI());
             return;
         }
 
         try {
             long pedidoId = Long.parseLong(pedidoIdStr);
-            StatusPedido status = StatusPedido.valueOf(novoStatus);
-            
+            StatusPedido status;
+            try {
+                status = StatusPedido.valueOf(novoStatus);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                session.setAttribute("errorMessage", "Status inválido: " + novoStatus);
+                resp.sendRedirect(req.getRequestURI());
+                return;
+            }
+
             pedidoService.atualizarStatus(pedidoId, status, vinheriaId);
             session.setAttribute("successMessage", "Status do pedido #" + pedidoId + " atualizado para " + status.name() + ".");
-        } catch (IllegalArgumentException e) {
-            session.setAttribute("errorMessage", "Status inválido: " + novoStatus);
+        } catch (NumberFormatException e) {
+            session.setAttribute("errorMessage", "ID do pedido inválido: " + pedidoIdStr);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error updating order status", e);
             session.setAttribute("errorMessage", "Erro ao atualizar o status do pedido.");

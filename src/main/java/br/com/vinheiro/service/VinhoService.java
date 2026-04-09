@@ -120,7 +120,10 @@ public class VinhoService {
     public Optional<Vinho> findById(Long id, Long vinheriaId) {
         try (Connection conn = getConnection()) {
             Optional<Vinho> v = vinhoDAO.findById(id, conn);
-            if (v.isPresent() && v.get().getVinheria().getId().equals(vinheriaId)) {
+            if (v.isPresent() && 
+                v.get().getVinheria() != null && 
+                v.get().getVinheria().getId() != null && 
+                v.get().getVinheria().getId().equals(vinheriaId)) {
                 return v;
             }
         } catch (SQLException e) {

@@ -83,6 +83,7 @@ public class QrCodeServlet extends HttpServlet {
             req.setAttribute("errorMessage", "Selecione ou informe uma ocasião para gerar o QR Code.");
             req.setAttribute("currentPage", "qrcode");
             req.setAttribute("pageTitle",   "Gerador de QR Code");
+            req.setAttribute("pageSubtitle", "Crie QR Codes para cada ocasião da sua adega.");
             req.getRequestDispatcher("/WEB-INF/views/admin/qrcode.jsp").forward(req, resp);
             return;
         }
@@ -90,8 +91,13 @@ public class QrCodeServlet extends HttpServlet {
         try {
             // Build the sommelier URL encoding
             String baseUrl = getPublicBaseUrl(req);
+            String slug = vinheria.getSlug();
+            if (slug == null || slug.isBlank()) {
+                throw new Exception("Vinheria sem slug definido. Não é possível gerar QR Code.");
+            }
+            String slugEncoded = URLEncoder.encode(slug, StandardCharsets.UTF_8);
             String ocasiaoEncoded = URLEncoder.encode(ocasiao, StandardCharsets.UTF_8);
-            String targetUrl = baseUrl + "/sommelier?slug=" + vinheria.getSlug()
+            String targetUrl = baseUrl + "/sommelier?slug=" + slugEncoded
                     + "&ocasiao=" + ocasiaoEncoded;
 
             // Generate QR image via service (which may return base64)
@@ -111,9 +117,10 @@ public class QrCodeServlet extends HttpServlet {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error generating QR code", e);
-            req.setAttribute("errorMessage", "Erro ao gerar o QR Code. Tente novamente.");
+            req.setAttribute("errorMessage", "Erro ao gerar o QR Code: " + e.getMessage());
             req.setAttribute("currentPage",  "qrcode");
             req.setAttribute("pageTitle",    "Gerador de QR Code");
+            req.setAttribute("pageSubtitle", "Crie QR Codes para cada ocasião da sua adega.");
         }
 
         req.getRequestDispatcher("/WEB-INF/views/admin/qrcode.jsp").forward(req, resp);
@@ -133,18 +140,28 @@ public class QrCodeServlet extends HttpServlet {
         String proto = req.getHeader("X-Forwarded-Proto");
         if (proto == null) proto = req.getScheme();
 
-        String host = req.getHeader("X-Forwarded-Host");
-        if (host == null) host = req.getServerName();
+        String hostHeader = req.getHeader("X-Forwarded-Host");
+        String host = (hostHeader != null && !hostHeader.isBlank()) ? hostHeader.split(",")[0].trim() : req.getServerName();
 
-        String port = req.getHeader("X-Forwarded-Port");
-        if (port == null) port = String.valueOf(req.getServerPort());
+        // Handle case where host string might already contain a port
+        String[] hostParts = host.split(":");
+        String actualHost = hostParts[0];
+
+        String portHeader = req.getHeader("X-Forwarded-Port");
+        String port = (portHeader != null && !portHeader.isBlank()) ? portHeader : String.valueOf(req.getServerPort());
+        
+        // If host header already included a port, override the port variable
+        if (hostParts.length > 1) {
+            port = hostParts[1];
+        }
 
         String context = req.getContextPath();
         
         StringBuilder sb = new StringBuilder();
-        sb.append(proto).append("://").append(host);
+        sb.append(proto).append("://").append(actualHost);
         
-        if (("http".equals(proto) && !"80".equals(port)) || ("https".equals(proto) && !"443".equals(port))) {
+        boolean isDefaultPort = ("http".equals(proto) && "80".equals(port)) || ("https".equals(proto) && "443".equals(port));
+        if (!isDefaultPort) {
             sb.append(":").append(port);
         }
         
