@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -80,7 +81,7 @@ public class VinhoDAO {
 
     public void update(Vinho vinho, Connection conn) throws SQLException {
         if (vinho.getId() == 0) {
-            throw new IllegalArgumentException("Vinho ID must not be null for update");
+            throw new IllegalArgumentException("Vinho ID must be greater than zero for update");
         }
         if (vinho.getVinheria() == null || vinho.getVinheria().getId() == null) {
             throw new IllegalArgumentException("Vinheria and Vinheria ID must not be null for update");
@@ -152,7 +153,7 @@ public class VinhoDAO {
         String tipoStr = rs.getString("tipo");
         if (tipoStr != null) {
             try {
-                vinho.setTipo(br.com.agnellovinheria.model.enums.TipoVinho.valueOf(tipoStr.toLowerCase()));
+                vinho.setTipo(br.com.agnellovinheria.model.enums.TipoVinho.valueOf(tipoStr.toLowerCase(Locale.ROOT)));
             } catch(IllegalArgumentException e) {
                 LOGGER.log(Level.WARNING, "Invalid TipoVinho value: {0} for vinho id: {1}", new Object[]{tipoStr, vinho.getId()});
             }
