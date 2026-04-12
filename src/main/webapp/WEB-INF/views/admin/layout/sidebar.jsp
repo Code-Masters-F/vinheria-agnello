@@ -5,8 +5,8 @@
     String currentPage = (String) request.getAttribute("currentPage");
     if (currentPage == null) currentPage = "";
 
-    br.com.vinheiro.model.UsuarioAdmin admin =
-        (br.com.vinheiro.model.UsuarioAdmin) session.getAttribute("usuarioAdmin");
+    br.com.agnellovinheria.model.UsuarioAdmin admin =
+        (br.com.agnellovinheria.model.UsuarioAdmin) session.getAttribute("usuarioAdmin");
     
     String adminNome = (admin != null && admin.getNome() != null && !admin.getNome().isBlank()) 
                        ? admin.getNome().trim() : "Admin";
