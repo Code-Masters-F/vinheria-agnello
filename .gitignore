@@ -50,6 +50,7 @@ out/
 *.pem
 local.properties
 google-services.json
+.env
 
 # SO
 .DS_Store

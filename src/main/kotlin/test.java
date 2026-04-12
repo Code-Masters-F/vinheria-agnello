@@ -1,4 +1,4 @@
-package br.com.vinheiro.kotlin;
+package br.com.agnellovinheria.kotlin;
 
 // Código Kotlin será inserido aqui
 public class test {

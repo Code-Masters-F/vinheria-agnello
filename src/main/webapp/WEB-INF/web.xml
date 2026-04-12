@@ -17,7 +17,7 @@
     <!-- Encoding padrão UTF-8 -->
     <filter>
         <filter-name>CharacterEncodingFilter</filter-name>
-        <filter-class>br.com.vinheiro.filter.CharacterEncodingFilter</filter-class>
+        <filter-class>br.com.agnellovinheria.filter.CharacterEncodingFilter</filter-class>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>
@@ -32,7 +32,7 @@
          esteja disponível quando AuthFilter for executado em rotas /admin/*. -->
     <filter>
         <filter-name>TenantFilter</filter-name>
-        <filter-class>br.com.vinheiro.filter.TenantFilter</filter-class>
+        <filter-class>br.com.agnellovinheria.filter.TenantFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>TenantFilter</filter-name>
@@ -41,7 +41,7 @@
 
     <filter>
         <filter-name>AuthFilter</filter-name>
-        <filter-class>br.com.vinheiro.filter.AuthFilter</filter-class>
+        <filter-class>br.com.agnellovinheria.filter.AuthFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
@@ -53,7 +53,7 @@
          ========================================================= -->
     <servlet>
         <servlet-name>DashboardServlet</servlet-name>
-        <servlet-class>br.com.vinheiro.servlet.admin.DashboardServlet</servlet-class>
+        <servlet-class>br.com.agnellovinheria.servlet.admin.DashboardServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>DashboardServlet</servlet-name>
@@ -66,7 +66,7 @@
 
     <servlet>
         <servlet-name>CatalogoServlet</servlet-name>
-        <servlet-class>br.com.vinheiro.servlet.admin.CatalogoServlet</servlet-class>
+        <servlet-class>br.com.agnellovinheria.servlet.admin.CatalogoServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>CatalogoServlet</servlet-name>
@@ -75,7 +75,7 @@
 
     <servlet>
         <servlet-name>PedidosServlet</servlet-name>
-        <servlet-class>br.com.vinheiro.servlet.admin.PedidosServlet</servlet-class>
+        <servlet-class>br.com.agnellovinheria.servlet.admin.PedidosServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>PedidosServlet</servlet-name>
@@ -84,7 +84,7 @@
 
     <servlet>
         <servlet-name>RelatoriosServlet</servlet-name>
-        <servlet-class>br.com.vinheiro.servlet.admin.RelatoriosServlet</servlet-class>
+        <servlet-class>br.com.agnellovinheria.servlet.admin.RelatoriosServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>RelatoriosServlet</servlet-name>
@@ -93,7 +93,7 @@
 
     <servlet>
         <servlet-name>QrCodeServlet</servlet-name>
-        <servlet-class>br.com.vinheiro.servlet.admin.QrCodeServlet</servlet-class>
+        <servlet-class>br.com.agnellovinheria.servlet.admin.QrCodeServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>QrCodeServlet</servlet-name>
