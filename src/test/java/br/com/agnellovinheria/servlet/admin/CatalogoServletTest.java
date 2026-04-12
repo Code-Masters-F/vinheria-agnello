@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.*;
  * Unit tests for CatalogoServlet (TDD — tests before implementation).
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CatalogoServletTest {
 
     @Mock private VinhoService vinhoService;
@@ -57,7 +60,6 @@ class CatalogoServletTest {
 
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute("usuarioAdmin")).thenReturn(admin);
-        when(request.getParameter("id")).thenReturn(null);
         when(vinhoService.listarDisponiveis(1L)).thenReturn(lista);
         when(request.getRequestDispatcher("/WEB-INF/views/admin/catalogo.jsp")).thenReturn(dispatcher);
 
@@ -74,7 +76,6 @@ class CatalogoServletTest {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute("usuarioAdmin")).thenReturn(admin);
         when(request.getParameter("nome")).thenReturn("");
-        when(request.getParameter("preco")).thenReturn("50.00");
         when(request.getParameter("action")).thenReturn("create");
         when(vinhoService.listarDisponiveis(1L)).thenReturn(List.of());
         when(request.getRequestDispatcher("/WEB-INF/views/admin/catalogo.jsp")).thenReturn(dispatcher);

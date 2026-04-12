@@ -67,6 +67,11 @@ class QrCodeServletTest {
         when(request.getParameter("ocasiao")).thenReturn("Jantar em Família");
         when(qrCodeService.generateQrCodeBase64(anyString())).thenReturn("base64string==");
         when(request.getRequestDispatcher("/WEB-INF/views/admin/qrcode.jsp")).thenReturn(dispatcher);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(8080);
+        when(request.getContextPath()).thenReturn("");
+        when(request.getHeader(anyString())).thenReturn(null);
 
         servlet.doPost(request, response);
 

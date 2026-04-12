@@ -81,7 +81,7 @@ public class VinhoService {
         try {
             BigDecimal preco = new BigDecimal(precoStr);
             if (preco.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new InvalidDataException("O preço deve ser maior que zero.");
+                throw new InvalidDataException("Invalid price: must be greater than zero.");
             }
         } catch (NumberFormatException e) {
             throw new InvalidDataException("Formato de preço inválido.");

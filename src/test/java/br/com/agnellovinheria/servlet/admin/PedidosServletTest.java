@@ -67,17 +67,21 @@ class PedidosServletTest {
     }
 
     @Test
-    @DisplayName("Pedidos: POST status update without pedidoId should forward with error")
+    @DisplayName("Pedidos: POST status update without pedidoId should redirect with error on session")
     void doPost_missingPedidoId_shouldForwardWithError() throws Exception {
+        String csrfToken = "test-csrf-token";
+
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute("usuarioAdmin")).thenReturn(admin);
+        when(session.getAttribute("csrfToken")).thenReturn(csrfToken);
+        when(request.getParameter("csrfToken")).thenReturn(csrfToken);
         when(request.getParameter("pedidoId")).thenReturn(null);
-        when(request.getParameter("novoStatus")).thenReturn("pago");
-        when(request.getRequestDispatcher("/WEB-INF/views/admin/pedidos.jsp")).thenReturn(dispatcher);
+        when(request.getParameter("novoStatus")).thenReturn("PENDENTE");
+        when(request.getRequestURI()).thenReturn("/admin/pedidos");
 
         servlet.doPost(request, response);
 
-        verify(request).setAttribute(eq("errorMessage"), anyString());
-        verify(dispatcher).forward(request, response);
+        verify(session).setAttribute(eq("errorMessage"), anyString());
+        verify(response).sendRedirect("/admin/pedidos");
     }
 }

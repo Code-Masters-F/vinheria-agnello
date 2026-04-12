@@ -203,8 +203,8 @@ public class CatalogoServlet extends HttpServlet {
 
         String tipoParam = req.getParameter("tipo");
         if (tipoParam != null && !tipoParam.isBlank()) {
-            try { 
-                vinho.setTipo(TipoVinho.valueOf(tipoParam)); 
+            try {
+                vinho.setTipo(TipoVinho.valueOf(tipoParam.toLowerCase()));
             } catch (IllegalArgumentException e) {
                 throw new InvalidDataException("Tipo de vinho inválido.");
             }
