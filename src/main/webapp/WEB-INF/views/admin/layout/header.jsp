@@ -42,11 +42,26 @@
                 <button class="mobile-toggle" onclick="document.body.classList.toggle('sidebar-open')" aria-label="Abrir menu">
                     <span class="nav-icon" aria-hidden="true">menu</span>
                 </button>
-                <div>
-                    <h1 class="admin-header-title">${pageTitle != null ? pageTitle : 'Painel Admin'}</h1>
+                <!-- Search bar (decorative in v1) -->
+                <div class="header-search">
+                    <span class="nav-icon header-search-icon" aria-hidden="true">search</span>
+                    <input type="text"
+                           class="header-search-input"
+                           placeholder="Procurar vinhos, pedidos ou clientes..."
+                           disabled
+                           aria-label="Buscar">
                 </div>
             </div>
             <div class="admin-header-actions">
+                <!-- Notification bell (decorative in v1) -->
+                <button class="btn btn-icon btn-ghost header-notification" aria-label="Notificações" disabled>
+                    <span class="nav-icon">notifications</span>
+                </button>
+                <!-- Admin user info -->
+                <div class="header-user">
+                    <span class="header-user-name"><%= adminNome %></span>
+                    <div class="header-user-avatar" aria-hidden="true"><%= adminInitial %></div>
+                </div>
                 <a href="<%= ctx %>/auth/logout" class="btn btn-secondary btn-sm" title="Sair">
                     <span class="nav-icon" aria-hidden="true">logout</span>
                     Sair

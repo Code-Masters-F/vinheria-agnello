@@ -67,6 +67,13 @@
                 <span class="nav-icon" aria-hidden="true">qr_code_2</span>
                 QR Code
             </a>
+
+            <a href="#"
+               class="admin-sidebar-link <%= "ajustes".equals(currentPage) ? "active" : "" %>"
+               aria-current="<%= "ajustes".equals(currentPage) ? "page" : "false" %>">
+                <span class="nav-icon" aria-hidden="true">settings</span>
+                Ajustes
+            </a>
         </nav>
 
         <div class="sidebar-footer">

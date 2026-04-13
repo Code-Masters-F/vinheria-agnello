@@ -1,44 +1,100 @@
+/* ============================================================
+   VINHERIA AGNELLO — Admin Design Tokens
+   All colours, spacings, radii and typography as CSS variables.
+   Never hard-code any of these values in component files.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 :root {
-  /* Typography */
-  --font-family-sans: 'Inter', sans-serif;
-  
-  /* Primary Deep Brand Color Palette */
-  --color-primary-base: #d41142;
+  /* ── Typography ── */
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ── Brand Palette ── */
+  --color-primary-base:  #c0273e;
   --color-primary-light: #fbe5ea;
-  --color-primary-dark: #a30d33;
+  --color-primary-dark:  #8f1a2c;
+  --color-primary-hover: #a8223a;
 
-  /* Neutrals & Greys */
-  --color-surface: #ffffff;
-  --color-background-app: #f4f5f7;
-  --color-text-primary: #171717;
-  --color-text-secondary: #666666;
-  --color-border-subtle: #e5e5e5;
+  /* ── Surfaces & Backgrounds ── */
+  --color-surface:         #ffffff;
+  --color-background-app:  #f4f5f7;
+  --color-surface-raised:  #fefefe;
 
-  /* Semantic State Colors */
-  --color-success: #138a42;
-  --color-warning: #db8a00;
-  --color-error: #e11d48;
+  /* ── Text ── */
+  --color-text-primary:   #171717;
+  --color-text-secondary: #6b7280;
+  --color-text-muted:     #9ca3af;
 
-  /* Structural Radii (Mapping ROUND_EIGHT) */
-  --radius-sm: 0.25rem;  /* 4px */
-  --radius-md: 0.5rem;   /* 8px - Stitch default */
-  --radius-lg: 1rem;     /* 16px */
+  /* ── Borders ── */
+  --color-border-subtle:  #e5e7eb;
+  --color-border-focus:   var(--color-primary-base);
+
+  /* ── Semantic States ── */
+  --color-success:        #16a34a;
+  --color-success-light:  #dcfce7;
+  --color-warning:        #d97706;
+  --color-warning-light:  #fef3c7;
+  --color-error:          #dc2626;
+  --color-error-light:    #fee2e2;
+  --color-info:           #2563eb;
+  --color-info-light:     #dbeafe;
+
+  /* ── Icon accent colours ── */
+  --color-accent-purple: #7c3aed;
+  --color-accent-purple-light: #ede9fe;
+  --color-accent-blue:   #2563eb;
+  --color-accent-blue-light:   #dbeafe;
+  --color-accent-gold:   #d97706;
+  --color-accent-gold-light:   #fef3c7;
+  --color-accent-green:  #16a34a;
+  --color-accent-green-light:  #dcfce7;
+  --color-accent-red:    #dc2626;
+  --color-accent-red-light:    #fee2e2;
+
+  /* ── Border Radii ── */
+  --radius-xs:   0.1875rem;  /* 3px */
+  --radius-sm:   0.25rem;    /* 4px */
+  --radius-md:   0.5rem;     /* 8px */
+  --radius-lg:   0.75rem;    /* 12px */
+  --radius-xl:   1rem;       /* 16px */
   --radius-full: 9999px;
 
-  /* Standard Spacings */
-  --spacing-xs: 0.25rem; /* 4px */
-  --spacing-sm: 0.5rem;  /* 8px */
-  --spacing-md: 1rem;    /* 16px */
-  --spacing-lg: 1.5rem;  /* 24px */
-  --spacing-xl: 2rem;    /* 32px */
+  /* ── Spacings ── */
+  --spacing-xs:  0.25rem;    /* 4px  */
+  --spacing-sm:  0.5rem;     /* 8px  */
+  --spacing-md:  1rem;       /* 16px */
+  --spacing-lg:  1.5rem;     /* 24px */
+  --spacing-xl:  2rem;       /* 32px */
+  --spacing-2xl: 3rem;       /* 48px */
+
+  /* ── Shadows ── */
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:     0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg:     0 10px 25px rgba(0,0,0,0.10);
+  --shadow-focus:  0 0 0 3px var(--color-primary-light);
+
+  /* ── Transitions ── */
+  --transition-fast:   all 0.15s ease;
+  --transition-normal: all 0.25s ease;
+
+  /* ── Sidebar dimensions ── */
+  --sidebar-width: 16rem;   /* 256px */
+}
+
+/* ── Base reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body {
-    font-family: var(--font-family-sans);
-    background-color: var(--color-background-app);
-    color: var(--color-text-primary);
-    margin: 0;
-    padding: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-family-sans);
+  background-color: var(--color-background-app);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 1rem;
+  line-height: 1.5;
 }
