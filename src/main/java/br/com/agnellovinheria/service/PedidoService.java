@@ -6,16 +6,24 @@ import br.com.agnellovinheria.dao.PedidoDAO;
 import br.com.agnellovinheria.dao.VinhoDAO;
 import br.com.agnellovinheria.model.ItemPedido;
 import br.com.agnellovinheria.model.Pedido;
+import br.com.agnellovinheria.model.PedidoResumo;
 import br.com.agnellovinheria.model.Vinho;
 import br.com.agnellovinheria.service.exceptions.InsufficientStockException;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PedidoService {
+    private static final Logger LOGGER = Logger.getLogger(PedidoService.class.getName());
+
     private final PedidoDAO pedidoDAO;
     private final ItemPedidoDAO itemPedidoDAO;
     private final VinhoDAO vinhoDAO;
@@ -90,6 +98,61 @@ public class PedidoService {
             if (affected == 0) {
                 throw new Exception("Nenhum pedido foi atualizado.");
             }
+        }
+    }
+
+    /* ─── Dashboard-specific methods ──────────────────────────── */
+
+    /**
+     * Returns the N most recent orders for the dashboard summary table.
+     */
+    public List<PedidoResumo> listarRecentes(Long vinheriaId, int limit) {
+        try (Connection conn = getConnection()) {
+            return pedidoDAO.findRecentByVinheriaId(vinheriaId, limit, conn);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Erro ao listar pedidos recentes", e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Returns the total sales amount (sum of {@code total}) for the current month,
+     * excluding cancelled orders.
+     */
+    public BigDecimal calcularVendasMes(Long vinheriaId) {
+        LocalDate today = LocalDate.now();
+        return calcularVendasMes(vinheriaId, today.getYear(), today.getMonthValue());
+    }
+
+    /**
+     * Returns the total sales amount for the previous month (for variation calculation).
+     */
+    public BigDecimal calcularVendasMesAnterior(Long vinheriaId) {
+        LocalDate prev = LocalDate.now().minusMonths(1);
+        return calcularVendasMes(vinheriaId, prev.getYear(), prev.getMonthValue());
+    }
+
+    /**
+     * Internal helper — sums order totals for a specific year/month.
+     */
+    BigDecimal calcularVendasMes(Long vinheriaId, int year, int month) {
+        try (Connection conn = getConnection()) {
+            return pedidoDAO.sumTotalByVinheriaAndMonth(vinheriaId, year, month, conn);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Erro ao calcular vendas do mês", e);
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * Counts orders that are still pending (not delivered or cancelled).
+     */
+    public int contarPedidosPendentes(Long vinheriaId) {
+        try (Connection conn = getConnection()) {
+            return pedidoDAO.countPending(vinheriaId, conn);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Erro ao contar pedidos pendentes", e);
+            return 0;
         }
     }
 }

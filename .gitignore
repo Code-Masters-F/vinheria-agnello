@@ -72,3 +72,4 @@ lib/
 .specify
 spec.md
 specs/
+.opencode
