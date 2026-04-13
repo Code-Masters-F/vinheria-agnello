@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    </main><!-- /.admin-main -->
-</div><!-- /.admin-shell -->
+    </main><!-- /.admin-content -->
+  </div><!-- /.admin-main -->
+</div><!-- /.admin-container -->
 </body>
 </html>

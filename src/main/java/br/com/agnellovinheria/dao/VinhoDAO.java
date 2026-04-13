@@ -33,7 +33,11 @@ public class VinhoDAO {
     public Optional<Vinho> findById(Long id, Connection conn) throws SQLException {
         String sql = "SELECT * FROM vinho WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, id);
+            if (id != null) {
+                stmt.setLong(1, id);
+            } else {
+                stmt.setNull(1, Types.BIGINT);
+            }
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapRow(rs));
@@ -80,8 +84,8 @@ public class VinhoDAO {
     }
 
     public void update(Vinho vinho, Connection conn) throws SQLException {
-        if (vinho.getId() == 0) {
-            throw new IllegalArgumentException("Vinho ID must be greater than zero for update");
+        if (vinho.getId() == null) {
+            throw new IllegalArgumentException("Vinho ID must not be null for update");
         }
         if (vinho.getVinheria() == null || vinho.getVinheria().getId() == null) {
             throw new IllegalArgumentException("Vinheria and Vinheria ID must not be null for update");
@@ -135,7 +139,11 @@ public class VinhoDAO {
         String sql = "UPDATE vinho SET estoque = ? WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, novoEstoque);
-            stmt.setLong(2, id);
+            if (id != null) {
+                stmt.setLong(2, id);
+            } else {
+                stmt.setNull(2, Types.BIGINT);
+            }
             stmt.executeUpdate();
         }
     }

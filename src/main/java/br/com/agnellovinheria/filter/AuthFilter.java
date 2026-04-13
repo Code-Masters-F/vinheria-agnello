@@ -37,9 +37,9 @@ public class AuthFilter implements Filter {
         // Passo 3: Exceções de Segurança!
         // Telas de login, registro e arquivos visuais (CSS/JS) precisam ser públicas.
         // Usamos comparações exatas e prefixo estrito para evitar expor rotas protegidas.
-        String adminLogin = contextPath + "/admin/login.jsp";
-        String adminRegistro = contextPath + "/admin/registro.jsp";
-        String staticPrefix = contextPath + "/admin/static/";
+        String adminLogin = contextPath + "/auth/login";
+        String adminRegistro = contextPath + "/auth/registro";
+        String staticPrefix = contextPath + "/static/";
         if (uri.equals(adminLogin) || uri.equals(adminRegistro) || uri.startsWith(staticPrefix)) {
             chain.doFilter(req, resp); // Libera o acesso
             return; // Para a execução do filtro aqui
@@ -54,8 +54,8 @@ public class AuthFilter implements Filter {
 
         // Passo 5: Se o usuário NÃO estiver logado (sessão ou usuário nulos)...
         if (usuarioAdmin == null) {
-            // Expulsamos o usuário enviando-o para a página de login
-            response.sendRedirect(contextPath + "/auth/login.jsp");
+            // Expulsamos o usuário enviando-o para a rota de login do Servlet
+            response.sendRedirect(contextPath + "/auth/login");
             return; // Para a execução
         }
 

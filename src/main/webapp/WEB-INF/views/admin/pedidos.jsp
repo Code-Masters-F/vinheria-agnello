@@ -1,8 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:include page="layout/header.jsp" />
-
-    <main class="admin-main" id="main-content">
 
         <div class="page-header">
             <div>
@@ -33,7 +31,7 @@
                     Pedidos Recentes
                 </h2>
             </div>
-            <div class="data-table-wrap">
+            <div class="table-responsive">
                 <c:choose>
                     <c:when test="${empty pedidos}">
                         <div class="card-body" style="text-align:center; padding:3rem;">
@@ -102,7 +100,5 @@
                 </c:choose>
             </div>
         </section>
-
-    </main>
 
 <jsp:include page="layout/footer.jsp" />
