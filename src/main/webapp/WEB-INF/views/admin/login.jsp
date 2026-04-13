@@ -25,7 +25,7 @@
 
         <c:if test="${not empty error}">
             <div class="alert alert-danger">
-                ${error}
+                <c:out value="${error}" />
             </div>
         </c:if>
 
@@ -44,7 +44,7 @@
         </form>
 
         <div class="login-footer">
-            &copy; 2024 Vinheria Agnello. Todos os direitos reservados.
+            &copy; <%= java.time.Year.now().getValue() %> Vinheria Agnello. Todos os direitos reservados.
         </div>
     </div>
 

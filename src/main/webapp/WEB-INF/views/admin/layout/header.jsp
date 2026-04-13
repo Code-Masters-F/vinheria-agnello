@@ -8,7 +8,8 @@
 
     br.com.agnellovinheria.model.UsuarioAdmin admin =
         (br.com.agnellovinheria.model.UsuarioAdmin) session.getAttribute("usuarioAdmin");
-    String adminNome = (admin != null && admin.getNome() != null) ? admin.getNome() : "Admin";
+    String adminNome = (admin != null && admin.getNome() != null && !admin.getNome().isBlank()) 
+                       ? admin.getNome().trim() : "Admin";
     String adminInitial = adminNome.substring(0, 1).toUpperCase();
 %>
 <!DOCTYPE html>

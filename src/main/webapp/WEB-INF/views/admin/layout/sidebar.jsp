@@ -11,6 +11,9 @@
     String adminNome = (admin != null && admin.getNome() != null && !admin.getNome().isBlank()) 
                        ? admin.getNome().trim() : "Admin";
     String adminInitial = adminNome.substring(0, 1).toUpperCase();
+    
+    // Set as request attribute for clean JSTL/EL usage below
+    request.setAttribute("adminNome", adminNome);
 %>
     <!-- ===== SIDEBAR ===== -->
     <aside class="admin-sidebar" id="adminSidebar" role="navigation" aria-label="Menu de Navegação Admin">
@@ -70,7 +73,7 @@
             <div class="admin-profile">
                 <div class="admin-avatar" aria-hidden="true"><%= adminInitial %></div>
                 <div class="admin-profile-info">
-                    <div class="admin-name"><c:out value="<%= adminNome %>" /></div>
+                    <div class="admin-name"><c:out value="${adminNome}" /></div>
                     <div class="admin-role">Administrador</div>
                 </div>
             </div>

@@ -39,7 +39,7 @@ public class Vinho {
         this.estoque = estoque;
         this.estoqueMinimo = estoqueMinimo;
         this.ativo = ativo;
-        this.criadoEm = Timestamp.valueOf(LocalDateTime.now());
+        this.criadoEm = (criadoEm != null) ? criadoEm : Timestamp.valueOf(LocalDateTime.now());
     }
 
     public Long getId() {

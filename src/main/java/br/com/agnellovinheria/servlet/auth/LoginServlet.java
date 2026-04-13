@@ -55,7 +55,13 @@ public class LoginServlet extends HttpServlet {
         Optional<UsuarioAdmin> optUsuario = usuarioService.autenticar(email, senha);
 
         if (optUsuario.isPresent()) {
-            // Cria a sessão e guarda o usuário
+            // Fix: Invalidate old session before creating a new one (Session Fixation mitigation)
+            HttpSession oldSession = request.getSession(false);
+            if (oldSession != null) {
+                oldSession.invalidate();
+            }
+            
+            // Create a brand new session and store user data
             HttpSession session = request.getSession(true);
             session.setAttribute("usuarioAdmin", optUsuario.get());
             

@@ -1,6 +1,6 @@
 :root {
   /* Typography */
-  --font-family-sans: 'Manrope', sans-serif;
+  --font-family-sans: 'Inter', sans-serif;
   
   /* Primary Deep Brand Color Palette */
   --color-primary-base: #d41142;
@@ -17,7 +17,7 @@
   /* Semantic State Colors */
   --color-success: #138a42;
   --color-warning: #db8a00;
-  --color-error: #d41142;
+  --color-error: #e11d48;
 
   /* Structural Radii (Mapping ROUND_EIGHT) */
   --radius-sm: 0.25rem;  /* 4px */

@@ -67,13 +67,13 @@ public class QrCodeServlet extends HttpServlet {
 
         HttpSession session = req.getSession(false);
         if (session == null || session.getAttribute("usuarioAdmin") == null) {
-            resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+            resp.sendRedirect(req.getContextPath() + "/auth/login");
             return;
         }
 
         UsuarioAdmin admin = (UsuarioAdmin) session.getAttribute("usuarioAdmin");
         if (admin == null || admin.getVinheria() == null) {
-             resp.sendRedirect(req.getContextPath() + "/auth/login.jsp");
+             resp.sendRedirect(req.getContextPath() + "/auth/login");
              return;
         }
         Vinheria vinheria = admin.getVinheria();

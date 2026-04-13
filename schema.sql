@@ -34,13 +34,14 @@ CREATE TABLE vinho (
     pais            VARCHAR(80),
     regiao          VARCHAR(100),
     safra           INTEGER,
-    preco           DECIMAL(10,2) NOT NULL,
+    preco           DECIMAL(10,2) NOT NULL CHECK (preco >= 0),
     descricao       TEXT,
     foto_url        VARCHAR(255),
     estoque         INT DEFAULT 0,
     estoque_minimo  INT DEFAULT 3,
     ativo           BOOLEAN DEFAULT TRUE,
-    criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id, vinheria_id)
 );
 
 -- Ocasiões e harmonizações (tags M:N)
@@ -63,6 +64,7 @@ CREATE TABLE cliente (
     tipo_cadastro   VARCHAR(20) NOT NULL,
     pontos          INT DEFAULT 0,
     criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id, vinheria_id),
     UNIQUE (vinheria_id, email),
     UNIQUE (vinheria_id, whatsapp)
 );
@@ -71,22 +73,26 @@ CREATE TABLE cliente (
 CREATE TABLE pedido (
     id              BIGSERIAL PRIMARY KEY,
     vinheria_id     BIGINT NOT NULL REFERENCES vinheria(id),
-    cliente_id      BIGINT REFERENCES cliente(id),
+    cliente_id      BIGINT,
     status          VARCHAR(30) DEFAULT 'aguardando_pagamento',
     tipo_entrega    VARCHAR(20) NOT NULL,
-    subtotal        DECIMAL(10,2) NOT NULL,
-    total           DECIMAL(10,2) NOT NULL,
+    subtotal        DECIMAL(10,2) NOT NULL CHECK (subtotal >= 0),
+    total           DECIMAL(10,2) NOT NULL CHECK (total >= 0),
     endereco_entrega TEXT,
     criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    atualizado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cliente_id, vinheria_id) REFERENCES cliente(id, vinheria_id)
 );
 
 CREATE TABLE item_pedido (
     id          BIGSERIAL PRIMARY KEY,
-    pedido_id   BIGINT NOT NULL REFERENCES pedido(id),
-    vinho_id    BIGINT NOT NULL REFERENCES vinho(id),
-    quantidade  INT NOT NULL,
-    preco_unit  DECIMAL(10,2) NOT NULL
+    vinheria_id BIGINT NOT NULL,
+    pedido_id   BIGINT NOT NULL,
+    vinho_id    BIGINT NOT NULL,
+    quantidade  INT NOT NULL CHECK (quantidade > 0),
+    preco_unit  DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (pedido_id) REFERENCES pedido(id),
+    FOREIGN KEY (vinho_id, vinheria_id) REFERENCES vinho(id, vinheria_id)
 );
 
 -- Pagamentos
@@ -95,7 +101,7 @@ CREATE TABLE pagamento (
     pedido_id       BIGINT NOT NULL REFERENCES pedido(id),
     metodo          VARCHAR(20),
     status          VARCHAR(20),
-    valor           DECIMAL(10,2) NOT NULL,
+    valor           DECIMAL(10,2) NOT NULL CHECK (valor >= 0),
     gateway_id      VARCHAR(100),
     criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -103,12 +109,15 @@ CREATE TABLE pagamento (
 -- Avaliações de vinho pelo cliente
 CREATE TABLE avaliacao_vinho (
     id          BIGSERIAL PRIMARY KEY,
-    cliente_id  BIGINT NOT NULL REFERENCES cliente(id),
-    vinho_id    BIGINT NOT NULL REFERENCES vinho(id),
-    nota        SMALLINT CHECK (nota BETWEEN 1 AND 5),
+    vinheria_id BIGINT NOT NULL,
+    cliente_id  BIGINT NOT NULL,
+    vinho_id    BIGINT NOT NULL,
+    nota        SMALLINT NOT NULL CHECK (nota BETWEEN 1 AND 5),
     ocasiao     VARCHAR(60),
     criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (cliente_id, vinho_id)
+    UNIQUE (cliente_id, vinho_id),
+    FOREIGN KEY (cliente_id, vinheria_id) REFERENCES cliente(id, vinheria_id),
+    FOREIGN KEY (vinho_id, vinheria_id) REFERENCES vinho(id, vinheria_id)
 );
 
 -- Campanhas segmentadas
@@ -158,3 +167,5 @@ CREATE INDEX idx_cliente_vinheria ON cliente(vinheria_id);
 CREATE INDEX idx_pedido_vinheria ON pedido(vinheria_id);
 CREATE INDEX idx_pedido_cliente ON pedido(cliente_id);
 CREATE INDEX idx_item_pedido_pedido ON item_pedido(pedido_id);
+CREATE INDEX idx_pagamento_pedido ON pagamento(pedido_id);
+CREATE INDEX idx_avaliacao_vinho_cliente_vinho ON avaliacao_vinho(cliente_id, vinho_id);

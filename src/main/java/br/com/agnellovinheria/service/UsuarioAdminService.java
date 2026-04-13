@@ -35,6 +35,9 @@ public class UsuarioAdminService {
                     }
                     return Optional.of(admin);
                 }
+            } else {
+                // Dummy hash check to mitigate timing attacks by equalizing verification time
+                BCrypt.checkpw(senha, "$2a$12$L7p6Y5y/C/yYVwF/YvYvYuG.v0K/Rk2YvYvYuG.v0K/Rk2YvYvYu");
             }
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao autenticar usuário", e);

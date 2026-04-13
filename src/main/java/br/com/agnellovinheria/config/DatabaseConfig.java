@@ -45,7 +45,7 @@ public class DatabaseConfig {
 
             dataSource = new HikariDataSource(config);
         } catch (Exception e) {
-            throw new ExceptionInInitializerError("Falha ao configurar o Pool HikariCP: " + e.getMessage());
+            throw new ExceptionInInitializerError(e);
         }
     }
 
