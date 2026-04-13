@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%
     /* Helper: resolve the context path for static assets */
     String ctx = request.getContextPath();
@@ -25,28 +25,32 @@
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Admin CSS (Vanilla CSS — No frameworks) -->
-    <link rel="stylesheet" href="<%= ctx %>/static/css/admin.css">
+    <link rel="stylesheet" href="<%= ctx %>/css/admin/variables.css">
+    <link rel="stylesheet" href="<%= ctx %>/css/admin/layout.css">
+    <link rel="stylesheet" href="<%= ctx %>/css/admin/components.css">
 </head>
 <body>
-<div class="admin-shell">
+<div class="admin-container">
 
     <jsp:include page="sidebar.jsp" />
 
-    <!-- ===== HEADER ===== -->
-    <header class="admin-header" role="banner">
-        <div class="d-flex align-center gap-1">
-            <button class="mobile-toggle" onclick="document.body.classList.toggle('sidebar-open')" aria-label="Abrir menu">
-                <span class="nav-icon" aria-hidden="true">menu</span>
-            </button>
-            <div>
-                <div class="header-title">${pageTitle != null ? pageTitle : 'Painel Admin'}</div>
-                <div class="header-subtitle">${pageSubtitle != null ? pageSubtitle : 'Vinheria Agnello'}</div>
+    <div class="admin-main">
+        <!-- ===== HEADER ===== -->
+        <header class="admin-header" role="banner">
+            <div class="d-flex align-center gap-1">
+                <button class="mobile-toggle" onclick="document.body.classList.toggle('sidebar-open')" aria-label="Abrir menu">
+                    <span class="nav-icon" aria-hidden="true">menu</span>
+                </button>
+                <div>
+                    <h1 class="admin-header-title">${pageTitle != null ? pageTitle : 'Painel Admin'}</h1>
+                </div>
             </div>
-        </div>
-        <div class="header-actions">
-            <a href="<%= ctx %>/auth/logout" class="btn btn-secondary btn-sm" title="Sair">
-                <span class="nav-icon" aria-hidden="true">logout</span>
-                Sair
-            </a>
-        </div>
-    </header>
+            <div class="admin-header-actions">
+                <a href="<%= ctx %>/auth/logout" class="btn btn-secondary btn-sm" title="Sair">
+                    <span class="nav-icon" aria-hidden="true">logout</span>
+                    Sair
+                </a>
+            </div>
+        </header>
+
+        <main class="admin-content" id="main-content">

@@ -1,8 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:include page="layout/header.jsp" />
-
-    <main class="admin-main" id="main-content">
 
         <div class="page-header">
             <div>
@@ -118,7 +116,5 @@
             </div>
         </section>
         </c:if>
-
-    </main>
 
 <jsp:include page="layout/footer.jsp" />

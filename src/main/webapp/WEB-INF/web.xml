@@ -5,12 +5,11 @@
          https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
          version="5.0">
 
-    <display-name>Meu App Web</display-name>
-    <description>App web básica com Servlets</description>
+    <display-name>Vinheria Agnello</display-name>
+    <description>Projeto Vinheria Agnello - Painel Administrativo</description>
 
     <!-- Welcome file (página inicial) -->
     <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
@@ -28,8 +27,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- TenantFilter deve rodar ANTES de AuthFilter para que o atributo "vinheriaId"
-         esteja disponível quando AuthFilter for executado em rotas /admin/*. -->
+    <!-- TenantFilter deve rodar ANTES de AuthFilter -->
     <filter>
         <filter-name>TenantFilter</filter-name>
         <filter-class>br.com.agnellovinheria.filter.TenantFilter</filter-class>
@@ -48,57 +46,7 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- =========================================================
-         Admin Panel Servlets
-         ========================================================= -->
-    <servlet>
-        <servlet-name>DashboardServlet</servlet-name>
-        <servlet-class>br.com.agnellovinheria.servlet.admin.DashboardServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>DashboardServlet</servlet-name>
-        <url-pattern>/admin/dashboard</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>DashboardServlet</servlet-name>
-        <url-pattern>/admin/</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>CatalogoServlet</servlet-name>
-        <servlet-class>br.com.agnellovinheria.servlet.admin.CatalogoServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>CatalogoServlet</servlet-name>
-        <url-pattern>/admin/catalogo</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>PedidosServlet</servlet-name>
-        <servlet-class>br.com.agnellovinheria.servlet.admin.PedidosServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>PedidosServlet</servlet-name>
-        <url-pattern>/admin/pedidos</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>RelatoriosServlet</servlet-name>
-        <servlet-class>br.com.agnellovinheria.servlet.admin.RelatoriosServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>RelatoriosServlet</servlet-name>
-        <url-pattern>/admin/relatorios</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>QrCodeServlet</servlet-name>
-        <servlet-class>br.com.agnellovinheria.servlet.admin.QrCodeServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>QrCodeServlet</servlet-name>
-        <url-pattern>/admin/qrcode</url-pattern>
-    </servlet-mapping>
+    <!-- Servlets configurados via @WebServlet nas classes para evitar duplicidade -->
 
     <!-- =========================================================
          Custom Error Pages

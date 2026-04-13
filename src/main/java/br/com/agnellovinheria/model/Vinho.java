@@ -6,7 +6,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 public class Vinho {
-    private long id;
+    private Long id;
     private Vinheria vinheria;
     private String nome;
     private TipoVinho tipo;
@@ -24,7 +24,7 @@ public class Vinho {
 
     public Vinho() {}
 
-    public Vinho(long id, Vinheria vinheria, String nome, TipoVinho tipo, String uva, String pais, String regiao, String safra, String preco, String descricao, String fotoUrl, int estoque, int estoqueMinimo, boolean ativo, Timestamp criadoEm) {
+    public Vinho(Long id, Vinheria vinheria, String nome, TipoVinho tipo, String uva, String pais, String regiao, String safra, String preco, String descricao, String fotoUrl, int estoque, int estoqueMinimo, boolean ativo, Timestamp criadoEm) {
         this.id = id;
         this.vinheria = vinheria;
         this.nome = nome;
@@ -42,11 +42,11 @@ public class Vinho {
         this.criadoEm = Timestamp.valueOf(LocalDateTime.now());
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
