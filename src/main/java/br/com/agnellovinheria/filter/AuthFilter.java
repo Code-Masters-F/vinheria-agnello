@@ -40,7 +40,13 @@ public class AuthFilter implements Filter {
         String adminLogin = contextPath + "/auth/login";
         String adminRegistro = contextPath + "/auth/registro";
         String staticPrefix = contextPath + "/static/";
-        if (uri.equals(adminLogin) || uri.equals(adminRegistro) || uri.startsWith(staticPrefix)) {
+        String cssPrefix = contextPath + "/css/";
+        String jsPrefix = contextPath + "/js/";
+        String favicon = contextPath + "/favicon.ico";
+
+        if (uri.equals(adminLogin) || uri.equals(adminRegistro) || 
+            uri.startsWith(staticPrefix) || uri.startsWith(cssPrefix) || 
+            uri.startsWith(jsPrefix) || uri.equals(favicon)) {
             chain.doFilter(req, resp); // Libera o acesso
             return; // Para a execução do filtro aqui
         }
