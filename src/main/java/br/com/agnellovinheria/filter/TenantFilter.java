@@ -20,7 +20,7 @@ public class TenantFilter implements Filter {
 
     // Rotas de sistema que nunca devem ser tratadas como slugs de vinheria
     private static final Set<String> RESERVED_SEGMENTS = Set.of(
-        "api", "admin", "static", "auth", "login", "registro", "error", "css", "js", "assets", "favicon.ico"
+        "api", "admin", "static", "auth", "login", "logout", "registro", "error", "css", "js", "assets", "favicon.ico"
     );
 
     // Domínios pai permitidos para extração de subdomínio.
