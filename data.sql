@@ -10,7 +10,7 @@ ON CONFLICT (id) DO NOTHING;
 -- 2. Create Admin User (Password: admin123)
 -- Using a standard BCrypt hash for "admin123"
 INSERT INTO usuario_admin (id, vinheria_id, nome, email, senha_hash)
-VALUES (1, 1, 'Admin Agnello', 'admin@agnello.com', '$2a$10$8WJ0X1D4Y.NqP.OszF.y/.N1k.Y6S1U2V3W4X5Y6Z7A8B9C0D1E2F3')
+VALUES (1, 1, 'Admin Agnello', 'admin@agnello.com', '$2a$10$C6L7LpgCdNIPs8gissy17eXMcWEYbgkg9pGUkB7cgQJHkpjeptv7q')
 ON CONFLICT (email) DO NOTHING;
 
 -- 3. Catalog Data (Vinhos)
