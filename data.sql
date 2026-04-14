@@ -11,7 +11,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Using a standard BCrypt hash for "admin123"
 INSERT INTO usuario_admin (id, vinheria_id, nome, email, senha_hash)
 VALUES (1, 1, 'Admin Agnello', 'admin@agnello.com', '$2a$10$C6L7LpgCdNIPs8gissy17eXMcWEYbgkg9pGUkB7cgQJHkpjeptv7q')
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (email) DO UPDATE SET senha_hash = EXCLUDED.senha_hash;
 
 -- 3. Catalog Data (Vinhos)
 INSERT INTO vinho (id, vinheria_id, nome, tipo, uva, pais, safra, preco, estoque, descricao)

@@ -95,13 +95,17 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
 
 3. **Crie o banco de dados e o schema:**
 
-   A aplicacao usa o schema `vinheria_db` (configurado em `DatabaseConfig.java`). Conecte ao PostgreSQL e execute:
-   ```sql
-   CREATE SCHEMA IF NOT EXISTS vinheria_db;
-   SET search_path TO vinheria_db;
+   ```bash
+   # Crie o banco (pule se ja tiver um banco criado, ex: postgres)
+   psql -U seu_usuario -c "CREATE DATABASE vinheiro_db;"
    ```
 
-   Em seguida, execute os scripts SQL:
+   A aplicacao usa o schema `vinheria_db` (configurado em `DatabaseConfig.java`). Conecte ao banco criado e execute:
+   ```bash
+   psql -U seu_usuario -d vinheiro_db -c "CREATE SCHEMA IF NOT EXISTS vinheria_db;"
+   ```
+
+   Em seguida, execute os scripts SQL com o search_path apontando para o schema:
    ```bash
    # Estrutura das tabelas
    psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f schema.sql
@@ -109,6 +113,8 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
    # Dados de demonstracao (opcional)
    psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f data.sql
    ```
+
+   > O nome do banco (`vinheiro_db`) deve corresponder ao que foi configurado na variavel `DB_URL` do passo anterior. Em ambientes AWS, pode ser outro nome (ex: `postgres`).
 
 4. **Execute localmente via Jetty:**
    ```bash
@@ -120,6 +126,7 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
    Abra o navegador em `http://localhost:8080/auth/login`.
 
    Se executou o `data.sql`, use as credenciais de teste:
+
    | Campo | Valor |
    |-------|-------|
    | Email | `admin@agnello.com` |
