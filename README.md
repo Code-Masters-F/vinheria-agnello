@@ -77,7 +77,7 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
    ```
 
 2. **Configure as variáveis de ambiente:**
-   Crie um arquivo `.env` na raiz do projeto baseado no `.env.example`:
+   Crie um arquivo `.env` na raiz do projeto (ao lado do `pom.xml`) baseado no `.env.example`:
    ```env
    DB_URL=jdbc:postgresql://localhost:5432/vinheiro_db
    DB_USER=seu_usuario
@@ -85,20 +85,76 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
    DB_DRIVER=org.postgresql.Driver
    ```
 
-3. **Crie o banco de dados:**
-   Execute os scripts localizados na raiz:
+   Para banco **AWS Aurora/RDS**, use o endpoint fornecido pelo console:
+   ```env
+   DB_URL=jdbc:postgresql://<endpoint>.rds.amazonaws.com:5432/<nome-do-banco>
+   DB_USER=seu_usuario
+   DB_PASSWORD=sua_senha
+   DB_DRIVER=org.postgresql.Driver
+   ```
+
+3. **Crie o banco de dados e o schema:**
+
+   A aplicacao usa o schema `vinheria_db` (configurado em `DatabaseConfig.java`). Conecte ao PostgreSQL e execute:
+   ```sql
+   CREATE SCHEMA IF NOT EXISTS vinheria_db;
+   SET search_path TO vinheria_db;
+   ```
+
+   Em seguida, execute os scripts SQL:
    ```bash
-   # Primeiro o esquema
-   psql -U seu_usuario -d vinheiro_db -f schema.sql
-   # Opcional: Dados de demonstração
-   psql -U seu_usuario -d vinheiro_db -f data.sql
+   # Estrutura das tabelas
+   psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f schema.sql
+
+   # Dados de demonstracao (opcional)
+   psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f data.sql
    ```
 
 4. **Execute localmente via Jetty:**
    ```bash
    mvn jetty:run
    ```
-   Acesse a aplicação em: `http://localhost:8080`
+
+5. **Acesse a aplicacao:**
+
+   Abra o navegador em `http://localhost:8080/auth/login`.
+
+   Se executou o `data.sql`, use as credenciais de teste:
+   | Campo | Valor |
+   |-------|-------|
+   | Email | `admin@agnello.com` |
+   | Senha | `admin123` |
+
+### Rotas Disponiveis
+
+| URL | Descricao |
+|-----|-----------|
+| `/auth/login` | Tela de login (ponto de entrada) |
+| `/admin/dashboard` | Dashboard principal |
+| `/admin/catalogo` | Gestao do catalogo de vinhos |
+| `/admin/pedidos` | Gestao de pedidos |
+| `/admin/relatorios` | Relatorios de vendas |
+| `/admin/qrcode` | Gerador de QR Codes |
+
+> Todas as rotas `/admin/*` exigem autenticacao. Sem login, voce sera redirecionado para `/auth/login`.
+
+### Deploy em Producao (AWS EC2)
+
+No EC2 com Amazon Linux, configure as credenciais do banco via **variaveis de ambiente do sistema** em vez do arquivo `.env`:
+
+```bash
+# Via systemd (recomendado) — no unit file do app server:
+[Service]
+Environment="DB_URL=jdbc:postgresql://<endpoint>.rds.amazonaws.com:5432/<banco>"
+Environment="DB_USER=seu_usuario"
+Environment="DB_PASSWORD=sua_senha"
+Environment="DB_DRIVER=org.postgresql.Driver"
+```
+
+A lib `dotenv-java` usada no projeto faz fallback automatico para variaveis de ambiente do sistema quando o arquivo `.env` nao existe (`ignoreIfMissing`).
+
+> [!IMPORTANT]
+> No Security Group da instancia RDS, libere a porta **5432** para o IP/Security Group do EC2. Se o RDS estiver em subnet privada, o EC2 precisa estar na mesma VPC.
 
 ---
 
