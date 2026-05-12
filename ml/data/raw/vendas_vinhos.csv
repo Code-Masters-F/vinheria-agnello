@@ -1,0 +1,21 @@
+tipo_vinho,faixa_preco,canal_venda,regiao_cliente,perfil_comprador,mes_venda,qtd_garrafas,desconto_aplicado,sucesso_venda
+Tinto,Intermediario,Loja fisica,Sudeste,Consumidor final,6,2,0,1
+Espumante,Economico,E-commerce,Sul,Consumidor final,12,3,5,1
+Branco,Premium,Eventos/Feiras,Sudeste,Restaurante/Bar,3,12,10,1
+Tinto,Premium,Indicacao,Sudeste,Hotel,7,20,15,1
+Rose,Intermediario,E-commerce,Nordeste,Consumidor final,11,2,20,0
+Espumante,Premium,Loja fisica,Sul,Restaurante/Bar,12,24,5,1
+Tinto,Economico,Loja fisica,Sudeste,Consumidor final,8,1,0,1
+Branco,Intermediario,E-commerce,Centro-Oeste,Consumidor final,2,2,15,0
+Tinto,Premium,Eventos/Feiras,Sudeste,Distribuidora,9,60,8,1
+Espumante,Intermediario,Indicacao,Sul,Consumidor final,12,6,0,1
+Rose,Economico,E-commerce,Norte,Consumidor final,10,1,25,0
+Tinto,Intermediario,Loja fisica,Sul,Restaurante/Bar,6,10,5,1
+Branco,Premium,Indicacao,Sudeste,Hotel,4,15,10,1
+Tinto,Premium,E-commerce,Centro-Oeste,Consumidor final,7,2,30,0
+Espumante,Economico,Loja fisica,Sudeste,Consumidor final,1,2,10,0
+Tinto,Intermediario,Eventos/Feiras,Sudeste,Distribuidora,5,48,5,1
+Rose,Premium,Indicacao,Sul,Restaurante/Bar,11,8,0,1
+Branco,Economico,E-commerce,Nordeste,Consumidor final,9,3,15,1
+Tinto,Premium,Loja fisica,Norte,Consumidor final,3,1,35,0
+Espumante,Intermediario,Eventos/Feiras,Sudeste,Restaurante/Bar,12,18,5,1
