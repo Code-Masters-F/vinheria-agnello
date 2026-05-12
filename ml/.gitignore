@@ -1,0 +1,33 @@
+# Ambientes virtuais
+venv/
+.venv/
+env/
+ENV/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Checkpoints do Jupyter
+.ipynb_checkpoints/
+
+# IDEs / editores
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Variaveis de ambiente
+.env
+
+# Logs
+*.log
+
+# OBS: dataset fictício, modelos treinados (.pkl), gráficos e notebooks
+# são versionados de propósito, fazem parte da entrega acadêmica.
