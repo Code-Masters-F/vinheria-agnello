@@ -3,6 +3,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import os
+from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
@@ -112,7 +113,9 @@ categorical_cols = [
     'faixa_preco',
     'canal_venda',
     'regiao_cliente',
-    'perfil_comprador',
+    'uva',
+    'pais',
+    'vinho_ocasiao',
 ]
 
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
@@ -213,3 +216,20 @@ print(confusion_matrix(y_test, y_pred_rf))
 Dentre os modelos testados, basta comparar as acurácias impressas no terminal para escolher
 o melhor modelo para prever o sucesso de venda.
 '''
+
+# Salvando as estatísticas dos modelos em CSV
+models_dir = Path("models")
+models_dir.mkdir(exist_ok=True)
+
+estatisticas = pd.DataFrame([
+    {"modelo": "Regressão Logística", "acuracia": accuracy_score(y_test, y_pred_logreg)},
+    {"modelo": "KNN", "acuracia": accuracy_score(y_test, y_pred_knn)},
+    {"modelo": "SVM (RBF)", "acuracia": accuracy_score(y_test, y_pred_svm_rbf)},
+    {"modelo": "SVM (Polinomial)", "acuracia": accuracy_score(y_test, y_pred_svm_poly)},
+    {"modelo": "SVM (Linear)", "acuracia": accuracy_score(y_test, y_pred_svm_linear)},
+    {"modelo": "Decision Tree", "acuracia": accuracy_score(y_test, y_pred_dt)},
+    {"modelo": "Random Forest", "acuracia": accuracy_score(y_test, y_pred_rf)},
+])
+
+estatisticas.to_csv(models_dir / "estatisticas_modelos.csv", index=False)
+print("Estatísticas salvas em models/estatisticas_modelos.csv")
