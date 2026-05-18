@@ -87,11 +87,9 @@ numeric_cols = ['mes_venda', 'qtd_garrafas', 'desconto_aplicado']
 
 for col in numeric_cols:
     median = df[col].median()
-    df[col] = df[col].apply(
-        lambda x: median
-        if x > df[col].quantile(0.975) or x < df[col].quantile(0.025)
-        else x
-    )
+    q_low = df[col].quantile(0.025)
+    q_high = df[col].quantile(0.975)
+    df.loc[(df[col] < q_low) | (df[col] > q_high), col] = median
 
 '''
 Agora vai começar a engenharia de features, serão realizados os seguintes passos:
@@ -118,17 +116,6 @@ categorical_cols = [
     'vinho_ocasiao',
 ]
 
-ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-X_encoded = pd.DataFrame(ohe.fit_transform(X[categorical_cols]))
-
-X_encoded = X_encoded.add_prefix('OHE_')
-
-# Removendo colunas categóricas originais
-X = X.drop(categorical_cols, axis=1)
-
-# Concatenando as features codificadas com as numéricas
-X = pd.concat([X.reset_index(drop=True), X_encoded.reset_index(drop=True)], axis=1)
-
 # Dividindo os dados em conjuntos de treino e teste (80% treino, 20% teste)
 X_train, X_test, y_train, y_test = train_test_split(
     X,
@@ -137,6 +124,23 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42,
     stratify=y,
 )
+
+# One-Hot Encoding ajustado apenas no treino para evitar data leakage
+ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+ohe.fit(X_train[categorical_cols])
+
+X_train_encoded = pd.DataFrame(ohe.transform(X_train[categorical_cols])).add_prefix('OHE_')
+X_test_encoded = pd.DataFrame(ohe.transform(X_test[categorical_cols])).add_prefix('OHE_')
+
+# Removendo colunas categóricas originais e concatenando as codificadas
+X_train = pd.concat([
+    X_train.drop(categorical_cols, axis=1).reset_index(drop=True),
+    X_train_encoded.reset_index(drop=True),
+], axis=1)
+X_test = pd.concat([
+    X_test.drop(categorical_cols, axis=1).reset_index(drop=True),
+    X_test_encoded.reset_index(drop=True),
+], axis=1)
 
 # Normalização das features numéricas
 scaler = MinMaxScaler()
@@ -197,7 +201,7 @@ Agora vou aplicar modelos baseados em árvores, para comparação com os outros 
 '''
 
 # Decision Tree
-dt = DecisionTreeClassifier()
+dt = DecisionTreeClassifier(random_state=42)
 dt.fit(X_train_scaled, y_train)
 y_pred_dt = dt.predict(X_teste_scaled)
 print("Acurácia Decision Tree:", accuracy_score(y_test, y_pred_dt))
@@ -205,7 +209,7 @@ print(classification_report(y_test, y_pred_dt))
 print(confusion_matrix(y_test, y_pred_dt))
 
 # Random Forest
-rf = RandomForestClassifier(n_estimators=25)
+rf = RandomForestClassifier(n_estimators=25, random_state=42)
 rf.fit(X_train_scaled, y_train)
 y_pred_rf = rf.predict(X_teste_scaled)
 print("Acurácia Random Forest:", accuracy_score(y_test, y_pred_rf))
