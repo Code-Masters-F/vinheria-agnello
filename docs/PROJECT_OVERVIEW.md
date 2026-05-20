@@ -16,6 +16,9 @@ O Vinheiro **não vende vinho**, não gerencia estoque físico e não faz entreg
 - [A Solução](#-a-solução)
 - [Funcionalidades](#-funcionalidades)
 - [Motor de Recomendação por IA](#-motor-de-recomendação-por-ia--funcionalidade-core)
+- [Modelo de Negócio](#-modelo-de-negócio)
+- [Stack Tecnológica](#-stack-tecnológica)
+- [Arquitetura e Padrões](#-arquitetura-e-padrões)
 
 ---
 
@@ -195,5 +198,34 @@ Com o tempo, as perguntas chegam pré-preenchidas com as preferências salvas e 
 - Sem comissão por venda — receita baseada apenas em assinatura
 
 ---
+
+## 🛠️ Stack Tecnológica
+
+O projeto foi construído seguindo rigorosos padrões de engenharia de software e arquitetura em camadas:
+
+- **Backend:** Java 17 com Jakarta Servlet API 5.0.
+- **Interface Admin:** JSP (Jakarta Server Pages) 3.0 + JSTL.
+- **Design System:** Vanilla CSS com variáveis customizadas, foco em **Glassmorphism** e design responsivo (unidades relativas `rem`/`em`).
+- **Banco de Dados:** PostgreSQL (Produção/RDS) e H2 (Testes).
+- **Persistência:** JDBC com pool de conexões **HikariCP**.
+- **Segurança:** Criptografia **BCrypt** para senhas e política de Cookies `httpOnly`.
+- **Servidor:** Jetty (ambiente de desenvolvimento).
+
+---
+
+## 🏗️ Arquitetura e Padrões
+
+A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separação clara de responsabilidades:
+
+1.  **Servlet Layer (Controllers):** Roteamento e tratamento de requisições.
+2.  **Service Layer:** Onde reside toda a lógica de negócio (Regras de fidelidade, calculo de recomendação, etc).
+3.  **DAO Layer:** Abstração total do acesso ao banco de dados utilizando JDBC puro para máxima performance.
+4.  **Filter Layer:** Implementação de **Multi-tenancy** (isolamento de dados por vinheria) e filtros de segurança/autenticação.
+
+> [!IMPORTANT]
+> **TDD (Test-Driven Development):** Todas as camadas de serviço e DAO são cobertas por testes unitários e de integração utilizando **JUnit 5** e **Mockito**.
+
+---
+
 
 *Documento de referência para desenvolvimento — Sprint 1 · 2026*
