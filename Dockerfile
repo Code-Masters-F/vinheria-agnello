@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application inside Tomcat
-FROM tomcat:10.1-jre17-alpine
+FROM tomcat:10.1-jre17
 
 # Clean up default Tomcat applications
 RUN rm -rf /usr/local/tomcat/webapps/*
