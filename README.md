@@ -79,10 +79,13 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
 2. **Configure as variáveis de ambiente:**
    Crie um arquivo `.env` na raiz do projeto baseado no `.env.example`:
    ```env
-   DB_URL=jdbc:postgresql://localhost:5432/vinheiro_db
-   DB_USER=seu_usuario
+   DB_URL=jdbc:postgresql://db.<project-ref>.supabase.co:5432/postgres
+   DB_USER=vinheria_user
    DB_PASSWORD=sua_senha
    DB_DRIVER=org.postgresql.Driver
+   DB_SCHEMA=public
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua_publishable_key
    ```
 
 3. **Crie o banco de dados:**

@@ -38,10 +38,13 @@ public class DatabaseConfig {
             config.setMinimumIdle(2);
             config.setConnectionTimeout(30000);
 
-            // Configurações específicas para AWS RDS e Schema
+            // Configurações específicas para Banco de Dados e Schema
             config.addDataSourceProperty("ssl", "true");
             config.addDataSourceProperty("sslmode", "require");
-            config.addDataSourceProperty("currentSchema", "vinheria_db");
+            
+            // Define o schema padrão do banco de dados (ex: 'public' para Supabase, 'vinheria_db' para AWS RDS)
+            String dbSchema = dotenv.get("DB_SCHEMA", "public");
+            config.addDataSourceProperty("currentSchema", dbSchema);
 
             dataSource = new HikariDataSource(config);
         } catch (Exception e) {

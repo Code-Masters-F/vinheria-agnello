@@ -13,7 +13,7 @@ public class MigrationRunner {
         System.out.println("Starting granular migration from: " + migrationPath);
         
         try {
-            Dotenv.configure().directory("src").ignoreIfMissing().load();
+            Dotenv.configure().ignoreIfMissing().load();
             String content = new String(Files.readAllBytes(Paths.get(migrationPath)));
             String[] commands = content.split(";");
             
