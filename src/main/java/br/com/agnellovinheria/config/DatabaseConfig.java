@@ -11,20 +11,31 @@ public class DatabaseConfig {
 
     private static final HikariDataSource dataSource;
 
+    private static String getEnv(Dotenv dotenv, String key) {
+        String value = dotenv.get(key);
+        if (value == null || value.isBlank()) {
+            value = System.getenv(key);
+        }
+        return value;
+    }
+
     static {
         try {
             // Carrega variáveis do arquivo .env
             Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
-            String dbUrl = dotenv.get("DB_URL");
-            String dbUser = dotenv.get("DB_USER");
-            String dbPassword = dotenv.get("DB_PASSWORD");
-            String dbDriver = dotenv.get("DB_DRIVER", "org.postgresql.Driver");
+            String dbUrl = getEnv(dotenv, "DB_URL");
+            String dbUser = getEnv(dotenv, "DB_USER");
+            String dbPassword = getEnv(dotenv, "DB_PASSWORD");
+            String dbDriver = getEnv(dotenv, "DB_DRIVER");
+            if (dbDriver == null || dbDriver.isBlank()) {
+                dbDriver = "org.postgresql.Driver";
+            }
 
             if (dbUrl == null || dbUrl.isBlank() ||
                     dbUser == null || dbUser.isBlank() ||
                     dbPassword == null || dbPassword.isBlank()) {
-                throw new IllegalStateException("Missing required DB env vars in .env file: DB_URL, DB_USER, DB_PASSWORD");
+                throw new IllegalStateException("Missing required DB env vars: DB_URL, DB_USER, DB_PASSWORD");
             }
 
             HikariConfig config = new HikariConfig();
@@ -43,7 +54,10 @@ public class DatabaseConfig {
             config.addDataSourceProperty("sslmode", "require");
             
             // Define o schema padrão do banco de dados (ex: 'public' para Supabase, 'vinheria_db' para AWS RDS)
-            String dbSchema = dotenv.get("DB_SCHEMA", "public");
+            String dbSchema = getEnv(dotenv, "DB_SCHEMA");
+            if (dbSchema == null || dbSchema.isBlank()) {
+                dbSchema = "public";
+            }
             config.addDataSourceProperty("currentSchema", dbSchema);
 
             dataSource = new HikariDataSource(config);
