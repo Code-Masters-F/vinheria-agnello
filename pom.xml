@@ -166,6 +166,9 @@
                     <httpConnector>
                         <port>8080</port>
                     </httpConnector>
+                    <!-- Force JVM to prefer IPv6 so it can resolve db.*.supabase.co
+                         which only returns AAAA (IPv6) records on Supabase free tier -->
+                    <jvmArgs>-Djava.net.preferIPv6Addresses=true -Djava.net.preferIPv4Stack=false</jvmArgs>
                 </configuration>
             </plugin>
         </plugins>

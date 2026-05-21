@@ -69,10 +69,10 @@
    Em seguida, execute os scripts SQL com o search_path apontando para o schema:
    ```bash
    # Estrutura das tabelas
-   psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f schema.sql
+   psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f database/schema.sql
 
    # Dados de demonstracao (opcional)
-   psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f data.sql
+   psql -U seu_usuario -d vinheiro_db -c "SET search_path TO vinheria_db;" -f database/data.sql
    ```
 
    > O nome do banco (`vinheiro_db`) deve corresponder ao que foi configurado na variavel `DB_URL` do passo anterior.
@@ -82,11 +82,21 @@
    mvn jetty:run
    ```
 
-6. **Acesse a aplicacao:**
+6. **Execute via Docker (opcional):**
+   Para construir e rodar a aplicação encapsulada em um container Docker:
+   ```bash
+   # Build da imagem (contexto na raiz, especificando o Dockerfile na pasta docker/)
+   docker build -t vinheria-agnello -f docker/Dockerfile .
+
+   # Executar o container exposto na porta 8080 carregando as variáveis do .env
+   docker run -p 8080:8080 --env-file .env vinheria-agnello
+   ```
+
+7. **Acesse a aplicação:**
 
    Abra o navegador em `http://localhost:8080/auth/login`.
 
-   Se executou o `data.sql`, use as credenciais de teste:
+   Se executou o `database/data.sql`, use as credenciais de teste:
 
    | Campo | Valor |
    |-------|-------|
@@ -112,6 +122,7 @@
 
 - [Guia de Arquitetura](docs/PROJECT_ARCHITECTURE.md)
 - [Visão Geral do Produto](docs/PROJECT_OVERVIEW.md)
+- [Instruções para Agentes IA (AGENTS.md)](AGENTS.md) - Contém diretrizes cruciais de desenvolvimento, incluindo a **obrigatória** referência de otimização de uso de tokens em toda chamada de função/código.
 
 ---
 
