@@ -19,9 +19,9 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize ASP.NET Core Minimal API project in `csharp-api/` using `dotnet new webapi -n VinheriaApi`
-- [ ] T002 Add required NuGet packages (Dapper, MySqlConnector) to `csharp-api/VinheriaApi/VinheriaApi.csproj`
-- [ ] T003 Configure MySQL connection string in `csharp-api/VinheriaApi/appsettings.json`
+- [X] T001 Initialize ASP.NET Core Minimal API project in `csharp-api/` using `dotnet new webapi -n VinheriaApi`
+- [X] T002 Add required NuGet packages (Dapper, MySqlConnector) to `csharp-api/VinheriaApi/VinheriaApi.csproj`
+- [X] T003 Configure MySQL connection string in `csharp-api/VinheriaApi/appsettings.json`
 
 ---
 
@@ -31,9 +31,9 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create `Produto` model/entity in `csharp-api/VinheriaApi/Models/Produto.cs`
-- [ ] T005 Create `IProdutoRepository` interface with basic connection setup in `csharp-api/VinheriaApi/Repositories/IProdutoRepository.cs`
-- [ ] T006 Register Dapper repository dependency injection in `csharp-api/VinheriaApi/Program.cs`
+- [X] T004 Create `Produto` model/entity in `csharp-api/VinheriaApi/Models/Produto.cs`
+- [X] T005 Create `IProdutoRepository` interface with basic connection setup in `csharp-api/VinheriaApi/Repositories/IProdutoRepository.cs`
+- [X] T006 Register Dapper repository dependency injection in `csharp-api/VinheriaApi/Program.cs`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -47,9 +47,9 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Implement `GetAll` and `GetById` methods in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
-- [ ] T008 [US1] Create `GET /api/produtos` endpoint in `csharp-api/VinheriaApi/Program.cs`
-- [ ] T009 [US1] Create `GET /api/produtos/{id}` endpoint in `csharp-api/VinheriaApi/Program.cs`
+- [X] T007 [P] [US1] Implement `GetAll` and `GetById` methods in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
+- [X] T008 [US1] Create `GET /api/produtos` endpoint in `csharp-api/VinheriaApi/Program.cs`
+- [X] T009 [US1] Create `GET /api/produtos/{id}` endpoint in `csharp-api/VinheriaApi/Program.cs`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -63,8 +63,8 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Implement `Create` method in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
-- [ ] T011 [US2] Create `POST /api/produtos` endpoint with basic validation in `csharp-api/VinheriaApi/Program.cs`
+- [X] T010 [P] [US2] Implement `Create` method in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
+- [X] T011 [US2] Create `POST /api/produtos` endpoint with basic validation in `csharp-api/VinheriaApi/Program.cs`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -78,8 +78,8 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T012 [P] [US3] Implement `Update` method in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
-- [ ] T013 [US3] Create `PUT /api/produtos/{id}` endpoint in `csharp-api/VinheriaApi/Program.cs`
+- [X] T012 [P] [US3] Implement `Update` method in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
+- [X] T013 [US3] Create `PUT /api/produtos/{id}` endpoint in `csharp-api/VinheriaApi/Program.cs`
 
 **Checkpoint**: All user stories up to US3 should now be independently functional
 
@@ -93,8 +93,8 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 ### Implementation for User Story 4
 
-- [ ] T014 [P] [US4] Implement `Delete` method in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
-- [ ] T015 [US4] Create `DELETE /api/produtos/{id}` endpoint in `csharp-api/VinheriaApi/Program.cs`
+- [X] T014 [P] [US4] Implement `Delete` method in `IProdutoRepository` and `csharp-api/VinheriaApi/Repositories/ProdutoRepository.cs`
+- [X] T015 [US4] Create `DELETE /api/produtos/{id}` endpoint in `csharp-api/VinheriaApi/Program.cs`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -104,8 +104,8 @@ description: "Task list template for C# API for Produto CRUD implementation"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T016 Setup Swagger/OpenAPI documentation mapping in `csharp-api/VinheriaApi/Program.cs`
-- [ ] T017 Verify error handling returns proper JSON schemas
+- [X] T016 Setup Swagger/OpenAPI documentation mapping in `csharp-api/VinheriaApi/Program.cs`
+- [X] T017 Verify error handling returns proper JSON schemas
 
 ---
 
