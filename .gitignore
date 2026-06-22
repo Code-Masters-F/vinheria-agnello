@@ -78,3 +78,6 @@ specs/
 # MCP
 .local.mcp.json
 .mcp.json
+
+# CONTEXTO IA
+CONTEXTO.MD
