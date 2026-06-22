@@ -73,3 +73,8 @@ lib/
 spec.md
 specs/
 .opencode
+.claude
+
+# MCP
+.local.mcp.json
+.mcp.json

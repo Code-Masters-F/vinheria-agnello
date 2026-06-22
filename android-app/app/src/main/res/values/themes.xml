@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.VinheriaAgnello" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">#1e1b4b</item>
+        <item name="colorPrimaryVariant">#312e81</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">#e11d48</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+    </style>
+</resources>

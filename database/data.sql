@@ -13,8 +13,8 @@ INSERT INTO usuario_admin (id, vinheria_id, nome, email, senha_hash)
 VALUES (1, 1, 'Admin Agnello', 'admin@agnello.com', '$2a$10$C6L7LpgCdNIPs8gissy17eXMcWEYbgkg9pGUkB7cgQJHkpjeptv7q')
 ON CONFLICT (email) DO UPDATE SET senha_hash = EXCLUDED.senha_hash;
 
--- 3. Catalog Data (Vinhos)
-INSERT INTO vinho (id, vinheria_id, nome, tipo, uva, pais, safra, preco, estoque, descricao)
+-- 3. Catalog Data (Produtos)
+INSERT INTO produto (id, vinheria_id, nome, tipo, uva, pais, safra, preco, estoque, descricao)
 VALUES 
 (1, 1, 'Reserva do Porto Special', 'Tinto', 'Touriga Nacional', 'Portugal', 2018, 189.90, 24, 'Um vinho encorpado com notas de frutas negras e carvalho.'),
 (2, 1, 'Agnello Gran Selection', 'Branco', 'Chardonnay', 'Argentina', 2021, 125.00, 15, 'Fresco, equilibrado e ideal para acompanhar frutos do mar.'),

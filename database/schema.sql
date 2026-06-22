@@ -24,8 +24,8 @@ CREATE TABLE usuario_admin (
     criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Catálogo de vinhos por vinheria
-CREATE TABLE vinho (
+-- Catálogo de produtos (vinhos e afins) por vinheria
+CREATE TABLE produto (
     id              BIGSERIAL PRIMARY KEY,
     vinheria_id     BIGINT NOT NULL REFERENCES vinheria(id),
     nome            VARCHAR(150) NOT NULL,
@@ -44,9 +44,12 @@ CREATE TABLE vinho (
     UNIQUE (id, vinheria_id)
 );
 
+-- Retrocompatibilidade para que o resto do sistema não quebre (Updatable View do PostgreSQL)
+CREATE VIEW vinho AS SELECT * FROM produto;
+
 -- Ocasiões e harmonizações (tags M:N)
 CREATE TABLE vinho_ocasiao (
-    vinho_id   BIGINT REFERENCES vinho(id),
+    vinho_id   BIGINT REFERENCES produto(id),
     ocasiao    VARCHAR(30),
     PRIMARY KEY (vinho_id, ocasiao)
 );
@@ -92,7 +95,7 @@ CREATE TABLE item_pedido (
     quantidade  INT NOT NULL CHECK (quantidade > 0),
     preco_unit  DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (pedido_id) REFERENCES pedido(id),
-    FOREIGN KEY (vinho_id, vinheria_id) REFERENCES vinho(id, vinheria_id)
+    FOREIGN KEY (vinho_id, vinheria_id) REFERENCES produto(id, vinheria_id)
 );
 
 -- Pagamentos
@@ -117,7 +120,7 @@ CREATE TABLE avaliacao_vinho (
     criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (cliente_id, vinho_id),
     FOREIGN KEY (cliente_id, vinheria_id) REFERENCES cliente(id, vinheria_id),
-    FOREIGN KEY (vinho_id, vinheria_id) REFERENCES vinho(id, vinheria_id)
+    FOREIGN KEY (vinho_id, vinheria_id) REFERENCES produto(id, vinheria_id)
 );
 
 -- Campanhas segmentadas
@@ -162,7 +165,7 @@ CREATE TABLE scan_qrcode (
 );
 
 -- Índices para performance
-CREATE INDEX idx_vinho_vinheria ON vinho(vinheria_id);
+CREATE INDEX idx_produto_vinheria ON produto(vinheria_id);
 CREATE INDEX idx_cliente_vinheria ON cliente(vinheria_id);
 CREATE INDEX idx_pedido_vinheria ON pedido(vinheria_id);
 CREATE INDEX idx_pedido_cliente ON pedido(cliente_id);

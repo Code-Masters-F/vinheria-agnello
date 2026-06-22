@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AndroidManifest.xml — Vinheria Agnello Android App
+    [TokenOptimization] - Mantendo o manifest enxuto; sem permissão de rede pois o app opera 100% offline
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Sem permissão INTERNET: o app é totalmente offline por design -->
+
+    <application
+        android:name=".VinheriaApplication"
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.VinheriaAgnello">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
