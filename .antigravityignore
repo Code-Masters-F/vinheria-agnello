@@ -1,0 +1,7 @@
+.opencode
+.idea
+.vscode
+.classpath
+.project
+.settings
+.DS_Store

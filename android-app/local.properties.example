@@ -1,0 +1,3 @@
+# Propriedades do SDK Android — definidas localmente e ignoradas pelo Git
+# Gere este arquivo apontando para o seu SDK local no Android Studio
+sdk.dir=C\:\\Users\\Intel\\AppData\\Local\\Android\\Sdk
