@@ -1,0 +1,10 @@
+# Scripts e arquivos montados/copiados em containers Linux precisam de quebra de linha LF,
+# mesmo quando o repositório é clonado no Windows (core.autocrlf=true quebraria os scripts).
+*.sh          text eol=lf
+*.script      text eol=lf
+Jenkinsfile   text eol=lf
+Dockerfile    text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+infra/**      text eol=lf
+*.sql         text eol=lf

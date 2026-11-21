@@ -50,9 +50,13 @@ mv "$RELEASE.tmp" "$RELEASE"
 
 # Troca atômica do link "atual": o servidor nunca vê uma versão pela metade.
 ln -sfn "releases/$VERSAO" "$DESTINO_SERVICO/atual.novo"
-mv -Tf "$DESTINO_SERVICO/atual.novo" "$DESTINO_SERVICO/atual"
+# GNU (Linux/WSL): mv -T troca o link de forma atômica. macOS/BSD: ln -sfn (troca quase instantânea).
+mv -Tf "$DESTINO_SERVICO/atual.novo" "$DESTINO_SERVICO/atual" 2>/dev/null \
+    || { rm -f "$DESTINO_SERVICO/atual.novo"; ln -sfn "releases/$VERSAO" "$DESTINO_SERVICO/atual"; }
 echo "==> $SERVICO/atual -> releases/$VERSAO"
 
 # Mantém apenas as últimas $MANTER versões (rollback)
-ls -1 "$DESTINO_SERVICO/releases" | grep -E '^[0-9]+$' | sort -n | head -n "-$MANTER" \
+# (awk em vez de "head -n -N", que não existe no macOS)
+ls -1 "$DESTINO_SERVICO/releases" | grep -E '^[0-9]+$' | sort -n \
+    | awk -v manter="$MANTER" '{ v[NR] = $0 } END { for (i = 1; i <= NR - manter; i++) print v[i] }' \
     | while read -r ANTIGA; do rm -rf "${DESTINO_SERVICO:?}/releases/$ANTIGA"; echo "    removida versão antiga $ANTIGA"; done

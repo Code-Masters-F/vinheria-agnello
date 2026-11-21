@@ -27,5 +27,7 @@ if [ -z "$ALVO" ] || [ ! -d "$PASTA/releases/$ALVO" ]; then
 fi
 
 ln -sfn "releases/$ALVO" "$PASTA/atual.novo"
-mv -Tf "$PASTA/atual.novo" "$PASTA/atual"
+# GNU (Linux/WSL): mv -T troca o link de forma atômica. macOS/BSD: ln -sfn (troca quase instantânea).
+mv -Tf "$PASTA/atual.novo" "$PASTA/atual" 2>/dev/null \
+    || { rm -f "$PASTA/atual.novo"; ln -sfn "releases/$ALVO" "$PASTA/atual"; }
 echo "$SERVICO: versão $ATUAL -> $ALVO (o serviço recicla em poucos segundos)"
