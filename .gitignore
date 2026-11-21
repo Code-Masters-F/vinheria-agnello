@@ -1,6 +1,7 @@
 # Build e Artefatos
 target/
 bin/
+obj/
 build/
 out/
 .gradle/

@@ -8,7 +8,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' not found. Defina a variável de ambiente ConnectionStrings__DefaultConnection.");
 
 builder.Services.AddScoped<IProdutoRepository>(sp => new ProdutoRepository(connectionString));
 

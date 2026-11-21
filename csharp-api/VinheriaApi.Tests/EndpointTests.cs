@@ -21,6 +21,11 @@ namespace VinheriaApi.Tests
             _mockRepo = new Mock<IProdutoRepository>();
             _factory = factory.WithWebHostBuilder(builder =>
             {
+                // A connection string não fica mais no appsettings.json (vem de variável de ambiente).
+                // Valor fictício: o repositório real é substituído pelo mock abaixo, então o banco nunca é acessado.
+                // [TokenOptimization] - Configuração injetada uma vez por fixture, sem depender do ambiente da máquina.
+                builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=teste;Database=teste");
+
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing registration
