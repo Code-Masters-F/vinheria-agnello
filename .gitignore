@@ -49,6 +49,8 @@ out/
 *.keystore
 *.p12
 *.pem
+*.key
+*.pfx
 local.properties
 google-services.json
 .env
