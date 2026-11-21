@@ -90,3 +90,6 @@ infra/secrets/
 
 # Pasta de publicação (deploy do Jenkins)
 /publicacao/
+
+# Capturas de tráfego da demonstração (contêm senhas e tokens de teste)
+/capturas/
