@@ -84,3 +84,6 @@ specs/
 
 # CONTEXTO IA
 CONTEXTO.MD
+
+# Segredos locais do docker-compose (chave JWT)
+infra/secrets/
