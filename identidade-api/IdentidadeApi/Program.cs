@@ -16,6 +16,7 @@ builder.Services.AddOptions<JwtOptions>()
     .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer) && !string.IsNullOrWhiteSpace(o.Audience),
               "Jwt:Issuer e Jwt:Audience são obrigatórios.")
     .Validate(o => o.ExpiracaoMinutos is > 0 and <= 60, "Jwt:ExpiracaoMinutos deve estar entre 1 e 60.")
+    .Validate(o => o.RefreshExpiracaoDias is > 0 and <= 30, "Jwt:RefreshExpiracaoDias deve estar entre 1 e 30.")
     .ValidateOnStart();
 
 // Segredo: vem de variável de ambiente, nunca do appsettings.json.
@@ -28,7 +29,9 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IChaveAssinaturaProvider, ChaveAssinaturaProvider>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IUsuarioRepository>(_ => new UsuarioRepository(connectionString));
+builder.Services.AddScoped<IRefreshTokenRepository>(_ => new RefreshTokenRepository(connectionString));
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
+builder.Services.AddScoped<ISessaoService, SessaoService>();
 
 var app = builder.Build();
 

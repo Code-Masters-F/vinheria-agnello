@@ -1,5 +1,6 @@
 -- Banco próprio do serviço de Identidade (Database per Service).
--- Executar conectado ao banco identidade_db.
+-- Executar conectado ao banco identidade_db. Idempotente: pode ser reaplicado em um banco existente
+-- para criar tabelas novas (ex.: refresh_token) sem perder dados.
 -- Os hashes BCrypt são gerados pelo próprio PostgreSQL (pgcrypto, custo 10), compatíveis com BCrypt.Net.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -25,6 +26,20 @@ CREATE TABLE IF NOT EXISTS usuario (
 
 -- E-mail único sem diferenciar maiúsculas/minúsculas (mesma regra da consulta de login).
 CREATE UNIQUE INDEX IF NOT EXISTS ux_usuario_email ON usuario (lower(email));
+
+-- Refresh tokens (cookie httpOnly). Só o hash SHA-256 é armazenado; cada renovação revoga o token
+-- anterior e registra o substituto (rotação). Reuso de token revogado derruba todas as sessões do usuário.
+CREATE TABLE IF NOT EXISTS refresh_token (
+    id                   BIGSERIAL   PRIMARY KEY,
+    usuario_id           BIGINT      NOT NULL REFERENCES usuario (id),
+    token_hash           VARCHAR(64) NOT NULL UNIQUE,
+    criado_em            TIMESTAMPTZ NOT NULL,
+    expira_em            TIMESTAMPTZ NOT NULL,
+    revogado_em          TIMESTAMPTZ,
+    substituido_por_hash VARCHAR(64)
+);
+
+CREATE INDEX IF NOT EXISTS ix_refresh_token_usuario ON refresh_token (usuario_id);
 
 -- Dados de demonstração
 INSERT INTO vinheria (id, nome, slug)

@@ -35,6 +35,8 @@ public sealed class IdentidadeApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IUsuarioRepository>();
             services.AddSingleton<IUsuarioRepository>(new UsuarioRepositoryFake());
+            services.RemoveAll<IRefreshTokenRepository>();
+            services.AddSingleton<IRefreshTokenRepository>(new RefreshTokenRepositoryFake());
         });
     }
 }
@@ -61,4 +63,56 @@ public sealed class UsuarioRepositoryFake : IUsuarioRepository
         return Task.FromResult(Usuarios.FirstOrDefault(u =>
             string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase)));
     }
+
+    public Task<Usuario?> BuscarPorIdAsync(long id, CancellationToken ct = default) =>
+        Task.FromResult(Usuarios.FirstOrDefault(u => u.Id == id));
+}
+
+/// <summary>Repositório de refresh tokens em memória (guarda só hashes, como o real).</summary>
+public sealed class RefreshTokenRepositoryFake : IRefreshTokenRepository
+{
+    private readonly object _trava = new();
+    public List<RefreshToken> Tokens { get; } = new();
+
+    public Task SalvarAsync(RefreshToken token, CancellationToken ct = default)
+    {
+        lock (_trava) Tokens.Add(token);
+        return Task.CompletedTask;
+    }
+
+    public Task<RefreshToken?> BuscarPorHashAsync(string tokenHash, CancellationToken ct = default)
+    {
+        lock (_trava) return Task.FromResult(Tokens.FirstOrDefault(t => t.TokenHash == tokenHash));
+    }
+
+    public Task<bool> RevogarAsync(string tokenHash, DateTime quando, string? substituidoPorHash, CancellationToken ct = default)
+    {
+        lock (_trava) return Task.FromResult(Substituir(t => t.TokenHash == tokenHash && t.RevogadoEm is null,
+            t => new RefreshToken { Id = t.Id, UsuarioId = t.UsuarioId, TokenHash = t.TokenHash, CriadoEm = t.CriadoEm,
+                                    ExpiraEm = t.ExpiraEm, RevogadoEm = quando, SubstituidoPorHash = substituidoPorHash }) > 0);
+    }
+
+    public Task RevogarTodosDoUsuarioAsync(long usuarioId, DateTime quando, CancellationToken ct = default)
+    {
+        lock (_trava) Substituir(t => t.UsuarioId == usuarioId && t.RevogadoEm is null,
+            t => new RefreshToken { Id = t.Id, UsuarioId = t.UsuarioId, TokenHash = t.TokenHash, CriadoEm = t.CriadoEm,
+                                    ExpiraEm = t.ExpiraEm, RevogadoEm = quando, SubstituidoPorHash = t.SubstituidoPorHash });
+        return Task.CompletedTask;
+    }
+
+    private int Substituir(Func<RefreshToken, bool> filtro, Func<RefreshToken, RefreshToken> novo)
+    {
+        var alterados = 0;
+        for (var i = 0; i < Tokens.Count; i++)
+            if (filtro(Tokens[i])) { Tokens[i] = novo(Tokens[i]); alterados++; }
+        return alterados;
+    }
+}
+
+/// <summary>Relógio controlável para testar expiração sem esperar.</summary>
+public sealed class RelogioFalso : TimeProvider
+{
+    private DateTimeOffset _agora = DateTimeOffset.UtcNow;
+    public override DateTimeOffset GetUtcNow() => _agora;
+    public void Avancar(TimeSpan tempo) => _agora = _agora.Add(tempo);
 }

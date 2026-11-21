@@ -8,3 +8,9 @@ public sealed record LoginResponse(string AccessToken, string TokenType, int Exp
 
 /// <summary>Token de acesso emitido pela Identidade.</summary>
 public sealed record TokenEmitido(string AccessToken, int ExpiraEmSegundos);
+
+/// <summary>
+/// Sessão emitida no login ou na renovação: token de acesso (vai no corpo da resposta) e refresh token
+/// (vai somente no cookie httpOnly, nunca no corpo).
+/// </summary>
+public sealed record SessaoEmitida(TokenEmitido Acesso, string RefreshToken, DateTime RefreshExpiraEm);

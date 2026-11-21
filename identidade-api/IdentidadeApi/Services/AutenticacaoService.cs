@@ -1,11 +1,10 @@
-using IdentidadeApi.Contracts;
 using IdentidadeApi.Models;
 using IdentidadeApi.Repositories;
 
 namespace IdentidadeApi.Services;
 
 /// <summary>
-/// Valida e-mail e senha (hash BCrypt) e emite o token de acesso.
+/// Valida e-mail e senha (hash BCrypt). A emissão da sessão (tokens) fica no <see cref="SessaoService"/>.
 /// </summary>
 /// <remarks>
 /// Todas as falhas (usuário inexistente, inativo, senha errada, hash corrompido) retornam <c>null</c>,
@@ -19,17 +18,15 @@ public sealed class AutenticacaoService : IAutenticacaoService
     private static readonly string HashFicticio = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString(), 10);
 
     private readonly IUsuarioRepository _repositorio;
-    private readonly ITokenService _tokens;
     private readonly ILogger<AutenticacaoService> _logger;
 
-    public AutenticacaoService(IUsuarioRepository repositorio, ITokenService tokens, ILogger<AutenticacaoService> logger)
+    public AutenticacaoService(IUsuarioRepository repositorio, ILogger<AutenticacaoService> logger)
     {
         _repositorio = repositorio;
-        _tokens = tokens;
         _logger = logger;
     }
 
-    public async Task<TokenEmitido?> AutenticarAsync(string email, string senha, CancellationToken ct = default)
+    public async Task<Usuario?> ValidarCredenciaisAsync(string email, string senha, CancellationToken ct = default)
     {
         // [TokenOptimization] - Uma única consulta ao banco por tentativa de login.
         var usuario = await _repositorio.BuscarPorEmailAsync(email.Trim(), ct);
@@ -48,7 +45,7 @@ public sealed class AutenticacaoService : IAutenticacaoService
         }
 
         _logger.LogInformation("Login bem-sucedido para o usuário {UsuarioId} ({Perfil})", usuario.Id, usuario.Perfil);
-        return _tokens.Emitir(usuario);
+        return usuario;
     }
 
     private bool SenhaConfere(string senha, Usuario usuario)

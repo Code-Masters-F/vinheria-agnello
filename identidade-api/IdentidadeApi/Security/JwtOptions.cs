@@ -16,6 +16,9 @@ public sealed class JwtOptions
     /// <summary>Validade do token de acesso. Curta de propósito: um token vazado expira rápido.</summary>
     public int ExpiracaoMinutos { get; set; } = 15;
 
+    /// <summary>Validade do refresh token (cookie httpOnly). Cada renovação gera um novo e revoga o anterior.</summary>
+    public int RefreshExpiracaoDias { get; set; } = 7;
+
     /// <summary>
     /// Caminho de um arquivo PEM com a chave privada RSA. Se vazio, uma chave temporária é gerada
     /// na inicialização (os tokens emitidos deixam de valer quando o serviço reinicia).
