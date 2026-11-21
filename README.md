@@ -138,7 +138,6 @@ Simulação de dois microsserviços da arquitetura acima — **Identidade** (log
 **Pré-requisitos:** Docker com Compose v2, git, bash, openssl e curl (no Windows, use o WSL 2). O .NET não é necessário.
 
 ```bash
-git checkout fase7-infra-devops          # enquanto a Fase 7 não estiver na main
 ./infra/scripts/configurar-ambiente.sh   # 1x: chaves, certificados, senhas (.env) e deploy inicial
 docker compose up -d --build             # 1ª vez: 5–15 min (downloads)
 ./infra/scripts/verificar-rede.sh        # DHCP, DNS, TLS e fluxo de autenticação

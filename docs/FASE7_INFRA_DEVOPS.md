@@ -175,8 +175,7 @@ curl -s --cacert $CA -H "Authorization: Bearer $TOKEN" -H 'Content-Type: applica
 | `./infra/scripts/rollback.sh identidade [versão]` | Volta um serviço para uma versão já publicada |
 | `docker compose down -v` | Remove tudo, inclusive bancos e Jenkins (volumes) |
 
-> **Jenkins e branch:** o job lê o GitHub (`VINHERIA_REPO_URL`) na branch `VINHERIA_BRANCH` (padrão `*/main`).
-> Para usar outra branch, defina `VINHERIA_BRANCH=*/nome-da-branch` no `.env` e rode `docker compose up -d jenkins`.
+> **Jenkins:** o job acompanha a branch `main` do repositório no GitHub.
 
 ---
 

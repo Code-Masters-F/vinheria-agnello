@@ -82,7 +82,6 @@ export PATH="$(brew --prefix openssl)/bin:$PATH"   # use este openssl ao rodar o
 ```bash
 git clone https://github.com/Code-Masters-F/vinheria-agnello.git
 cd vinheria-agnello
-git checkout fase7-infra-devops      # enquanto a Fase 7 não estiver na main
 ```
 
 ---
@@ -101,12 +100,6 @@ O script só cria o que estiver faltando (pode ser executado de novo sem problem
 | CA interna + certificado HTTPS de cada serviço | `infra/secrets/tls/` | HTTPS entre os serviços e com o host |
 | Senhas aleatórias do PostgreSQL e do admin do Jenkins | `.env` | `POSTGRES_PASSWORD`, `IDENTIDADE_DB_PASSWORD`, `CATALOGO_DB_PASSWORD`, `JENKINS_ADMIN_PASSWORD` |
 | Deploy inicial (versão 0) dos dois serviços | `publicacao/` | Os serviços sobem antes do primeiro build do Jenkins |
-
-**Antes do merge na `main`**, aponte o Jenkins para a branch da Fase 7:
-
-```bash
-echo 'VINHERIA_BRANCH=*/fase7-infra-devops' >> .env
-```
 
 ---
 
@@ -203,8 +196,8 @@ Saúde e versão em execução: `curl --cacert $CA https://localhost:8441/health
    docker logs vinheria-identidade | grep servidor      # "novo deploy detectado ... reciclando o processo"
    ```
 
-**Deploy automático:** a cada `git push` na branch configurada (`VINHERIA_BRANCH`), o Jenkins detecta a mudança em
-até ~2 minutos e roda o pipeline sozinho (causa do build: *Started by an SCM change*).
+**Deploy automático:** a cada `git push` na `main`, o Jenkins detecta a mudança em até ~2 minutos e roda o pipeline
+sozinho (causa do build: *Started by an SCM change*).
 
 **Rollback** (as 5 últimas versões ficam guardadas):
 
@@ -213,8 +206,8 @@ até ~2 minutos e roda o pipeline sozinho (causa do build: *Started by an SCM ch
 ./infra/scripts/rollback.sh identidade 6      # ou para uma versão específica
 ```
 
-**Trocar a branch lida pelo Jenkins:** edite `VINHERIA_BRANCH` no `.env` (ex.: `*/main` ou remova a linha depois do
-merge) e aplique com `docker compose up -d jenkins`.
+> Opcional: para o Jenkins acompanhar outra branch (ex.: testar algo antes do merge), defina
+> `VINHERIA_BRANCH=*/nome-da-branch` no `.env` e rode `docker compose up -d jenkins`.
 
 ---
 
@@ -289,8 +282,7 @@ runtime do ASP.NET Core 8; senão, roda no container `mcr.microsoft.com/dotnet/s
 | `curl: (60) SSL certificate problem` | CA interna não informada | Use `curl --cacert infra/secrets/tls/ca.crt ...` |
 | Token recusado (401) logo após trocar de modo | O emissor do token muda entre HTTP e HTTPS | Faça login de novo no modo atual |
 | Serviço não encontrado pelo nome (`*.vinheria.local`) | Concessão DHCP perdida | `docker compose restart identidade-rede` (ou `catalogo-rede`); o serviço reinicia junto e o DNS é atualizado |
-| `git push` não dispara o pipeline | O Jenkins verifica o repositório a cada ~2 min; ou a branch do push não é a `VINHERIA_BRANCH` | Aguarde ~2 min, confira `VINHERIA_BRANCH` no `.env` e o *Polling Log* do job; *Build Now* dispara na hora |
-| Jenkins falha no *Checkout* (`couldn't find remote ref`) | `VINHERIA_BRANCH` aponta para uma branch inexistente no GitHub | Corrija no `.env` e rode `docker compose up -d jenkins` |
+| `git push` não dispara o pipeline | O Jenkins verifica o repositório a cada ~2 min, e só a `main` | Aguarde ~2 min e confira o *Polling Log* do job; *Build Now* dispara na hora |
 | Jenkins falha na *Publicação* com `Permission denied` | Pasta `publicacao/` sem permissão para o Jenkins (uid 1000) | `chmod -R a+rwX publicacao` |
 | Login responde 500 depois de atualizar o código | Tabela nova ainda não existe no banco | Reaplique o `init.sql` (seção 10, "Atualizar após git pull") |
 | Testes falham com `PipeWriter.UnflushedBytes` | Testes rodando em .NET 9/10 | Use `./infra/scripts/rodar-testes.sh` (roda no .NET 8) |
