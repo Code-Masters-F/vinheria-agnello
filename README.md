@@ -118,9 +118,23 @@
 
 ---
 
+## 🧩 Arquitetura de Microsserviços (Fase 6 — planejamento)
+
+O sistema atual (API Java + API C# de produtos + ML em Python) será migrado gradualmente para **9 microsserviços em .NET 8**: Identidade, Catálogo, Pedidos, Pagamentos, Fidelidade, Recomendação, Campanhas, Notificações e Monitoramento (IoT da adega).
+
+- **Entrada única:** API Gateway **Ocelot** (JWT, rate limiting, rotas `/api/v1/...`) + Service Discovery com **Consul**
+- **Dados:** Database per Service (PostgreSQL; Oracle + Redis no Catálogo)
+- **Compra:** Saga coreografada via **Apache Kafka** (Outbox + idempotência)
+- **Infra:** Docker + Kubernetes, Polly para resiliência, Serilog + ELK para logs
+
+Detalhes em [Arquitetura de Microsserviços](docs/MICROSERVICES_ARCHITECTURE.md).
+
+---
+
 ## 📄 Documentação Adicional
 
 - [Guia de Arquitetura](docs/PROJECT_ARCHITECTURE.md)
+- [Arquitetura de Microsserviços (Fase 6)](docs/MICROSERVICES_ARCHITECTURE.md)
 - [Visão Geral do Produto](docs/PROJECT_OVERVIEW.md)
 - [Instruções para Agentes IA (AGENTS.md)](AGENTS.md) - Contém diretrizes cruciais de desenvolvimento, incluindo a **obrigatória** referência de otimização de uso de tokens em toda chamada de função/código.
 
