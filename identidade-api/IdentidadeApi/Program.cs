@@ -44,6 +44,12 @@ else
 }
 
 app.MapHealthChecks("/health");
+// Versão em execução (APP_VERSAO é definida pelo servidor de aplicação a partir da release publicada).
+// [TokenOptimization] - Lida da configuração já carregada, sem acesso a disco ou banco.
+app.MapGet("/versao", (IConfiguration configuracao) =>
+        Results.Ok(new { servico = "identidade", versao = configuracao["APP_VERSAO"] ?? "dev" }))
+    .WithTags("Infra")
+    .AllowAnonymous();
 app.MapDescobertaEndpoints();
 app.MapIdentidadeEndpoints();
 

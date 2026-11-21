@@ -42,8 +42,9 @@ for s in identidade catalogo; do
 done
 
 titulo "Resolução DNS (consultada a partir do Catálogo)"
-for nome in identidade catalogo db dns; do
-    ip=$(docker exec vinheria-catalogo nslookup "$nome.vinheria.local" 2>/dev/null | awk '/^Address/ && !/#53/ {print $2}' | tail -1)
+for nome in identidade catalogo db dns jenkins; do
+    # Só os endereços depois de "Name:" (as linhas anteriores são do próprio servidor DNS)
+    ip=$(docker exec vinheria-catalogo nslookup "$nome.vinheria.local" 2>/dev/null | awk '/^Name:/ {achou=1} achou && /^Address/ {print $2}' | tail -1)
     printf '%-26s -> %s\n' "$nome.vinheria.local" "${ip:-NÃO RESOLVIDO}"
 done
 

@@ -87,3 +87,6 @@ CONTEXTO.MD
 
 # Segredos locais do docker-compose (chave JWT)
 infra/secrets/
+
+# Pasta de publicação (deploy do Jenkins)
+/publicacao/

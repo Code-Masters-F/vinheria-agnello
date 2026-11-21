@@ -3,7 +3,8 @@
 #   infra/secrets/jwt-privada.pem      chave RSA que a Identidade usa para assinar os tokens
 #   infra/secrets/tls/ca.crt + ca.key  CA interna da Vinheria (a chave da CA nunca vai para os containers)
 #   infra/secrets/tls/<servico>.crt/.key  certificado HTTPS de cada serviço, emitido pela CA interna
-#   .env                               senhas do PostgreSQL (superusuário + um usuário por serviço)
+#   .env                               senhas do PostgreSQL e do admin do Jenkins
+#   publicacao/<servico>/              pasta de produção + deploy inicial (versão 0) dos serviços
 # Pode ser executado mais de uma vez: só cria o que estiver faltando.
 set -euo pipefail
 
@@ -72,7 +73,7 @@ touch "$ENV"
 # Garante quebra de linha no fim antes de acrescentar variáveis
 [ -s "$ENV" ] && [ -n "$(tail -c1 "$ENV")" ] && echo >> "$ENV"
 
-for VARIAVEL in POSTGRES_PASSWORD IDENTIDADE_DB_PASSWORD CATALOGO_DB_PASSWORD; do
+for VARIAVEL in POSTGRES_PASSWORD IDENTIDADE_DB_PASSWORD CATALOGO_DB_PASSWORD JENKINS_ADMIN_PASSWORD; do
     if grep -q "^${VARIAVEL}=" "$ENV"; then
         echo "• $VARIAVEL já definida no .env"
     else
@@ -81,5 +82,25 @@ for VARIAVEL in POSTGRES_PASSWORD IDENTIDADE_DB_PASSWORD CATALOGO_DB_PASSWORD; d
     fi
 done
 
+# ---------- Pasta de publicação + deploy inicial ----------
+for SERVICO in identidade catalogo; do
+    mkdir -p "$RAIZ/publicacao/$SERVICO/releases"
+done
+# O Jenkins grava na pasta com o uid 1000; em hosts Linux com outro uid, libera a escrita.
+if [ "$(uname -s)" = "Linux" ] && [ "$(id -u)" != "1000" ]; then
+    chmod -R a+rwX "$RAIZ/publicacao"
+    echo "• publicacao/ liberada para escrita do Jenkins (uid do host diferente de 1000)"
+fi
+for SERVICO in identidade catalogo; do
+    if [ ! -e "$RAIZ/publicacao/$SERVICO/atual" ]; then
+        echo "→ deploy inicial de $SERVICO (versão 0)"
+        bash "$RAIZ/infra/scripts/publicar.sh" "$SERVICO" 0 > /dev/null
+        echo "✔ $SERVICO publicado em publicacao/$SERVICO/releases/0"
+    else
+        echo "• $SERVICO já publicado ($(readlink "$RAIZ/publicacao/$SERVICO/atual"))"
+    fi
+done
+
 echo
 echo "Pronto. Suba o ambiente com: docker compose up -d --build"
+echo "Jenkins: http://localhost:8090  (usuário admin, senha JENKINS_ADMIN_PASSWORD do .env)"

@@ -101,6 +101,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
+// Versão em execução (APP_VERSAO é definida pelo servidor de aplicação a partir da release publicada).
+// [TokenOptimization] - Lida da configuração já carregada, sem acesso a disco ou banco.
+app.MapGet("/versao", (IConfiguration configuracao) =>
+        Results.Ok(new { servico = "catalogo", versao = configuracao["APP_VERSAO"] ?? "dev" }))
+    .WithTags("Infra")
+    .AllowAnonymous();
 // Rota alinhada à arquitetura de microsserviços + rota original da spec 010, ambas com as mesmas regras.
 app.MapProdutoEndpoints("/api/v1/catalogo/produtos", nomear: true);
 app.MapProdutoEndpoints("/api/produtos", nomear: false);

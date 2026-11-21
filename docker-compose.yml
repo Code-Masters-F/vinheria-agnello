@@ -2,9 +2,10 @@
 # Vinheria Agnello — ambiente simulado dos microsserviços (Fase 7)
 # =====================================================================
 #
-#   ./infra/scripts/configurar-ambiente.sh   # 1x: gera chave JWT, CA interna, certificados e senhas
+#   ./infra/scripts/configurar-ambiente.sh   # 1x: chave JWT, CA, certificados, senhas e deploy inicial
 #   docker compose up -d --build             # HTTPS (padrão)
 #   ./infra/scripts/verificar-rede.sh        # evidências de DHCP, DNS, TLS e comunicação
+#   Jenkins: http://localhost:8090 (usuário admin, senha JENKINS_ADMIN_PASSWORD do .env)
 #
 #   Demonstração SEM criptografia (Wireshark), depois volte com "docker compose up -d":
 #   docker compose -f docker-compose.yml -f docker-compose.inseguro.yml up -d
@@ -17,6 +18,11 @@
 #   db         PostgreSQL com um banco e um usuário por serviço              IP fixo 172.30.0.10
 #   identidade login + emissão de JWT (RS256) + JWKS                          IP via DHCP
 #   catalogo   produtos; valida os tokens buscando o JWKS na Identidade       IP via DHCP
+#   jenkins    CI/CD: build, testes, segurança e deploy na pasta ./publicacao  IP fixo 172.30.0.20
+#
+# Deploy (simula o IIS): o Jenkins publica cada versão em ./publicacao/<servico>/releases/<build> e
+# troca o link "atual". Os containers identidade/catalogo são servidores de aplicação (só o runtime
+# do .NET) que executam a versão em "atual" e reciclam o processo quando ela muda.
 #   *-rede     dono da interface de rede de cada serviço: obtém o IP no DHCP, registra o nome
 #              no DNS e publica as portas. O container do serviço .NET entra nessa rede
 #              (network_mode), como o container "pause" de um pod do Kubernetes. Assim, reiniciar
@@ -34,6 +40,12 @@ x-dns-vinheria: &dns-vinheria
   dns_search:
     - vinheria.local
 
+# Servidor de aplicação: imagem só com o runtime do .NET; o código vem da pasta de publicação
+x-servidor-app: &servidor-app
+  image: mcr.microsoft.com/dotnet/aspnet:8.0-alpine
+  user: app                # usuário não-root (uid 1654) da imagem oficial
+  entrypoint: ["/bin/sh", "/opt/vinheria/executar.sh"]
+
 x-healthcheck-api: &healthcheck-api
   # HTTPS no modo padrão (certificado verificado contra a CA interna); HTTP no modo inseguro de demonstração
   test: ["CMD-SHELL", "SSL_CERT_FILE=/run/secrets/tls/ca.crt wget -q -O /dev/null https://127.0.0.1:8443/health || wget -q -O /dev/null http://127.0.0.1:8080/health"]
@@ -49,6 +61,9 @@ services:
     hostname: dns
     cap_add:
       - NET_ADMIN          # necessário para o servidor DHCP
+    volumes:
+      # Concessões DHCP persistidas: ao reiniciar, o dnsmasq recupera os nomes registrados no DNS
+      - dns-concessoes:/var/lib/misc
     networks:
       vinheria-net:
         ipv4_address: 172.30.0.2
@@ -96,8 +111,9 @@ services:
     restart: unless-stopped
 
   identidade:
-    build: identidade-api
+    <<: *servidor-app
     container_name: vinheria-identidade
+    command: ["IdentidadeApi.dll"]
     network_mode: service:identidade-rede
     environment:
       # Somente HTTPS (o modo inseguro sobrescreve para HTTP)
@@ -110,6 +126,9 @@ services:
       # Chave fixa: reiniciar o serviço não invalida os tokens nem obriga o Catálogo a rebuscar o JWKS
       Jwt__ChavePrivadaPath: /run/secrets/jwt-privada.pem
     volumes:
+      # Pasta de publicação deste serviço, somente leitura (o serviço não altera o próprio código)
+      - ./publicacao/identidade:/publicacao:ro,z
+      - ./infra/runtime/executar.sh:/opt/vinheria/executar.sh:ro,z
       - ./infra/secrets/jwt-privada.pem:/run/secrets/jwt-privada.pem:ro,z
       # Só o certificado e a chave do próprio serviço (a chave da CA nunca entra nos containers)
       - ./infra/secrets/tls/identidade.crt:/run/secrets/tls/servico.crt:ro,z
@@ -142,8 +161,9 @@ services:
     restart: unless-stopped
 
   catalogo:
-    build: csharp-api
+    <<: *servidor-app
     container_name: vinheria-catalogo
+    command: ["VinheriaApi.dll"]
     network_mode: service:catalogo-rede
     environment:
       ASPNETCORE_URLS: https://+:8443
@@ -156,6 +176,8 @@ services:
       # Ao buscar o JWKS, só confia em certificados emitidos pela CA interna da Vinheria
       Jwt__CaCertPath: /run/secrets/tls/ca.crt
     volumes:
+      - ./publicacao/catalogo:/publicacao:ro,z
+      - ./infra/runtime/executar.sh:/opt/vinheria/executar.sh:ro,z
       - ./infra/secrets/tls/catalogo.crt:/run/secrets/tls/servico.crt:ro,z
       - ./infra/secrets/tls/catalogo.key:/run/secrets/tls/servico.key:ro,z
       - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
@@ -166,8 +188,33 @@ services:
       db:
         condition: service_healthy
       identidade:
-        condition: service_healthy
+        condition: service_started
     healthcheck: *healthcheck-api
+    restart: unless-stopped
+
+  jenkins:
+    build: infra/jenkins
+    container_name: vinheria-jenkins
+    hostname: jenkins
+    <<: *dns-vinheria
+    environment:
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?Defina JENKINS_ADMIN_PASSWORD no .env (rode infra/scripts/configurar-ambiente.sh)}
+      # Repositório Git do pipeline (pode ser trocado no .env)
+      VINHERIA_REPO_URL: ${VINHERIA_REPO_URL:-https://github.com/Code-Masters-F/vinheria-agnello.git}
+      VINHERIA_BRANCH: ${VINHERIA_BRANCH:-*/main}
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      # Pasta de produção: o deploy do pipeline grava aqui (único acesso do Jenkins aos serviços)
+      - ./publicacao:/publicacao:z
+      # Certificado público da CA interna, para a verificação pós-deploy por HTTPS
+      - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
+    ports:
+      - "127.0.0.1:8090:8080"
+    networks:
+      vinheria-net:
+        ipv4_address: 172.30.0.20
+    depends_on:
+      - dns
     restart: unless-stopped
 
 networks:
@@ -185,3 +232,5 @@ networks:
 
 volumes:
   db-dados:
+  dns-concessoes:
+  jenkins-home:
