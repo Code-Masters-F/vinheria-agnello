@@ -134,7 +134,10 @@ O acesso público (`CONNECT`) é revogado: o usuário da Identidade não consegu
 
 ## 4. Como executar
 
-**Pré-requisitos:** Docker com o plugin Compose, `bash` e `openssl` (no Windows, Git Bash).
+> Passo a passo completo — instalação por sistema operacional, uso, Jenkins, testes e solução de problemas:
+> **[FASE7_GUIA_EXECUCAO.md](FASE7_GUIA_EXECUCAO.md)**. Resumo:
+
+**Pré-requisitos:** Docker com o plugin Compose, `bash`, `openssl` e `curl` (no Windows, use o WSL 2).
 
 ```bash
 ./infra/scripts/configurar-ambiente.sh   # 1x: chave JWT, CA interna, certificados, senhas (.env) e deploy inicial (v0)
@@ -167,6 +170,8 @@ curl -s --cacert $CA -H "Authorization: Bearer $TOKEN" -H 'Content-Type: applica
 | `docker compose -f docker-compose.yml -f docker-compose.inseguro.yml up -d` | Modo **inseguro** (HTTP puro) — só para a demonstração no Wireshark |
 | `docker compose up -d` | Volta ao modo seguro (HTTPS) |
 | `./infra/scripts/gerar-trafego-demo.sh` | Gera o tráfego da demonstração (login, chamada autenticada, refresh, logout) |
+| `./infra/scripts/capturar-trafego.sh <nome>` | Captura a `br-vinheria` em `capturas/<nome>.pcap` (necessário no Windows/macOS) |
+| `./infra/scripts/rodar-testes.sh` | Roda os 70 testes (no .NET 8 local ou no container do SDK) |
 | `./infra/scripts/rollback.sh identidade [versão]` | Volta um serviço para uma versão já publicada |
 | `docker compose down -v` | Remove tudo, inclusive bancos e Jenkins (volumes) |
 
@@ -255,7 +260,9 @@ Objetivo: mostrar o que um atacante na mesma rede enxerga **sem criptografia** e
 
 **Preparação (Linux):** instale o Wireshark (`sudo dnf install wireshark` ou `sudo apt install wireshark`) e dê
 permissão de captura ao seu usuário (`sudo usermod -aG wireshark $USER` e faça logout/login), ou abra com `sudo`.
-Capture sempre na interface **`br-vinheria`** (a bridge da rede dos containers).
+Capture sempre na interface **`br-vinheria`** (a bridge da rede dos containers). No **Windows/macOS** (Docker Desktop)
+essa interface fica dentro da VM do Docker: use `./infra/scripts/capturar-trafego.sh <nome>` e abra o `.pcap` gerado
+em `capturas/` no Wireshark.
 
 > Capturas prontas, geradas e verificadas com `tcpdump`, ficam em `capturas/` (ignorada pelo git) quando existirem:
 > `demo-http-inseguro.pcap`, `demo-https-seguro.pcap` e `demo-dhcp-dns.pcap`. Podem ser abertas direto no Wireshark.
@@ -321,9 +328,7 @@ TDD em todas as funcionalidades novas (testes escritos antes, falhando, e depois
 | `VinheriaApi.Tests` | 42 | CRUD, RBAC (401/403/201), isolamento entre vinherias, tokens inválidos (expirado, outra chave, audience/issuer errados), validação TLS com a CA interna, `/versao`, ausência de senha na configuração |
 
 ```bash
-# Requer o runtime do .NET 8 (o pipeline do Jenkins já roda os dois projetos)
-dotnet test identidade-api/IdentidadeApi.Tests
-dotnet test csharp-api/VinheriaApi.Tests
+./infra/scripts/rodar-testes.sh   # .NET 8 local, ou container do SDK 8 se ele não estiver instalado
 ```
 
 ---
