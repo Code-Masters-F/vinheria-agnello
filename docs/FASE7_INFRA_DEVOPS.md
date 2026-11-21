@@ -364,3 +364,5 @@ TDD em todas as funcionalidades novas (testes escritos antes, falhando, e depois
 | Recriar o dnsmasq apagava os nomes do DNS | Concessões guardadas dentro do container | Concessões persistidas em volume |
 | Healthcheck falhava em HTTPS | O `wget` do Alpine verifica certificados e não conhecia a CA interna | Healthcheck valida contra a CA interna (sem desligar a verificação) |
 | Jenkins não iniciava | Opção de CSRF removida nas versões atuais, usada no JCasC | Remoção da opção (CSRF já é padrão) |
+| Depois de reiniciar o Jenkins, o push não disparava mais o deploy | O JCasC recria o job a cada inicialização e descartava o gatilho registrado pelo `Jenkinsfile` | Gatilho `pollSCM` declarado também no job do JCasC |
+| Scripts quebravam ao clonar no Windows / rodar no macOS | Quebra de linha CRLF e comandos exclusivos do GNU (`mv -T`, `head -n -N`) | `.gitattributes` forçando LF, alternativas portáveis e recomendação do WSL 2 no Windows |

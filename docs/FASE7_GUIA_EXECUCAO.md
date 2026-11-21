@@ -289,6 +289,7 @@ runtime do ASP.NET Core 8; senão, roda no container `mcr.microsoft.com/dotnet/s
 | `curl: (60) SSL certificate problem` | CA interna não informada | Use `curl --cacert infra/secrets/tls/ca.crt ...` |
 | Token recusado (401) logo após trocar de modo | O emissor do token muda entre HTTP e HTTPS | Faça login de novo no modo atual |
 | Serviço não encontrado pelo nome (`*.vinheria.local`) | Concessão DHCP perdida | `docker compose restart identidade-rede` (ou `catalogo-rede`); o serviço reinicia junto e o DNS é atualizado |
+| `git push` não dispara o pipeline | O Jenkins verifica o repositório a cada ~2 min; ou a branch do push não é a `VINHERIA_BRANCH` | Aguarde ~2 min, confira `VINHERIA_BRANCH` no `.env` e o *Polling Log* do job; *Build Now* dispara na hora |
 | Jenkins falha no *Checkout* (`couldn't find remote ref`) | `VINHERIA_BRANCH` aponta para uma branch inexistente no GitHub | Corrija no `.env` e rode `docker compose up -d jenkins` |
 | Jenkins falha na *Publicação* com `Permission denied` | Pasta `publicacao/` sem permissão para o Jenkins (uid 1000) | `chmod -R a+rwX publicacao` |
 | Login responde 500 depois de atualizar o código | Tabela nova ainda não existe no banco | Reaplique o `init.sql` (seção 10, "Atualizar após git pull") |
