@@ -16,9 +16,7 @@ jenkins:
   authorizationStrategy:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
-  crumbIssuer:
-    standard:
-      excludeClientIPFromCrumb: false
+  # Proteção CSRF (crumb) já vem ativa por padrão no Jenkins
 
 unclassified:
   location:
