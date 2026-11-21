@@ -2,6 +2,8 @@
 
 > Documento técnico de referência para desenvolvimento — Sprint 1 · 2026
 > Stack: Java + JSP (Backend) · Kotlin (Mobile B2C)  AWS (Banco de Dados)
+>
+> ℹ️ Este documento descreve a **arquitetura atual (monolito em camadas)**. A arquitetura-alvo de **microsserviços em .NET**, modelada na Fase 6, está em [MICROSERVICES_ARCHITECTURE.md](MICROSERVICES_ARCHITECTURE.md) — resumo na [seção 13](#13-evolução-para-microsserviços-fase-6).
 
 ---
 
@@ -19,6 +21,7 @@
 10. [Multi-tenancy — Isolamento por Vinheria](#10-multi-tenancy--isolamento-por-vinheria)
 11. [Plano de Implementação por Sprints](#11-plano-de-implementação-por-sprints)
 12. [Decisões Arquiteturais](#12-decisões-arquiteturais)
+13. [Evolução para Microsserviços (Fase 6)](#13-evolução-para-microsserviços-fase-6)
 
 ---
 
@@ -714,6 +717,8 @@ Todos os endpoints retornam `Content-Type: application/json`. Autenticação via
 10. Se cliente cadastrado: adiciona pontos de fidelidade
 ```
 
+> **Fase 6:** na arquitetura de microsserviços este fluxo vira uma **Saga coreografada** via Kafka (`PedidoCriado` → `EstoqueReservado` → `PagamentoAprovado`/`PagamentoRecusado`), com o estoque **reservado** pelo Catálogo antes da cobrança e liberado como compensação se o pagamento for recusado ou o Pix expirar. Ver [MICROSERVICES_ARCHITECTURE.md §3.5 e §4.4](MICROSERVICES_ARCHITECTURE.md#35-saga-coreografia).
+
 ### Fluxo 4 — Admin Cria Campanha Segmentada
 
 ```
@@ -1009,6 +1014,48 @@ Para o volume esperado no MVP (dezenas a centenas de vinherias), um banco compar
 - CSRF token em todos os formulários JSP
 - Rate limiting no endpoint de OTP (máx 3 tentativas / 10 min)
 - Dados sensíveis (CPF, endereço) nunca logados
+
+---
+
+## 13. Evolução para Microsserviços (Fase 6)
+
+Na Fase 6 foi modelada a migração do monolito descrito neste documento para **microsserviços em .NET 8 (ASP.NET Core)**. Documento completo: [MICROSERVICES_ARCHITECTURE.md](MICROSERVICES_ARCHITECTURE.md).
+
+### Limitações do modelo atual que motivam a mudança
+
+- Todos os serviços da API Java compartilham **o mesmo banco** e são publicados juntos;
+- uma falha pode afetar o sistema inteiro, não dá para escalar só a parte mais usada e toda alteração exige publicar tudo;
+- o `PedidoService` altera diretamente o estoque na tabela de vinhos (acoplamento entre módulos).
+
+### Mapeamento módulo atual → microsserviço
+
+| Módulo atual (seção 6) | Microsserviço | Origem principal |
+|---|---|---|
+| 1 — Autenticação e Multi-tenancy | **Identidade** | `UsuarioAdminService` |
+| 2 — Catálogo e Estoque | **Catálogo** (Oracle + Redis) | API C# `ProdutoRepository` |
+| 4 — Pedidos | **Pedidos** | `PedidoService` |
+| 4 — Pedidos (pagamento) | **Pagamentos** | `PagamentoService` |
+| 5 — Motor de Recomendação | **Recomendação** (+ módulo ML Python) | `RecomendacaoService`, `ml/train.py` |
+| 6 — Programa de Fidelidade | **Fidelidade** | `FidelidadeService` |
+| 7 e 8 — Campanhas e QR Code | **Campanhas** | `CampanhaService`, `QrCodeService` |
+| — | **Notificações** (novo, e-mail/push) | — |
+| — | **Monitoramento** (sensores IoT da adega) | entidades de IoT do banco |
+
+### O que muda em relação a este documento
+
+| Aspecto | Atual (monolito) | Alvo (microsserviços) |
+|---|---|---|
+| Entrada | Filtros `AuthFilter`, `TenantFilter`, `CorsFilter` | **API Gateway Ocelot** (JWT, tenant, CORS, rate limit, log) com rotas `/api/v1/{serviço}` |
+| Localização dos serviços | Aplicação única | **Consul** (Service Discovery + health checks) |
+| Banco | Um banco compartilhado | **Database per Service** (PostgreSQL; Oracle + Redis no Catálogo) — `vinheria_id` mantido em todas as tabelas |
+| Fluxo de compra | Transação única em `PedidoService.criarPedido` | **Saga coreografada** via **Apache Kafka** com Outbox e idempotência (ver Fluxo 3 da seção 8) |
+| Comunicação | Chamadas em memória | REST síncrono para consultas + eventos Kafka para mudanças de estado |
+| Autenticação | `HttpSession` validada pelo `AuthFilter` | **JWT** curto + **refresh token** emitidos pela Identidade, validados no gateway; RBAC Cliente/Admin em cada serviço |
+| Deploy/escala | Tomcat/Jetty, um artefato | Docker + **Kubernetes** com autoscaling por serviço |
+| Resiliência | — | **Polly** (timeout, retry, circuit breaker) |
+| Observabilidade | Logs por aplicação | Serilog + ELK com correlation id; OpenAPI por serviço; CI/CD por serviço |
+
+Durante a migração a API Java permanece ativa: o gateway aponta inicialmente para ela e cada rota é redirecionada ao microsserviço correspondente quando ele fica pronto.
 
 ---
 

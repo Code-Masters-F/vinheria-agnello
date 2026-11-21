@@ -222,6 +222,10 @@ A aplicação segue uma arquitetura **MVC (Model-View-Controller)** com separaç
 3.  **DAO Layer:** Abstração total do acesso ao banco de dados utilizando JDBC puro para máxima performance.
 4.  **Filter Layer:** Implementação de **Multi-tenancy** (isolamento de dados por vinheria) e filtros de segurança/autenticação.
 
+### Evolução planejada: microsserviços (Fase 6)
+
+A plataforma será dividida em serviços independentes, cada um cuidando de uma parte do negócio — **Identidade, Catálogo, Pedidos, Pagamentos, Fidelidade, Recomendação, Campanhas, Notificações e Monitoramento da adega** (sensores de temperatura, umidade e luminosidade). Assim, um problema em uma parte não derruba a loja inteira, e só o que estiver sobrecarregado (ex.: catálogo e pagamentos na Black Friday) precisa crescer. Detalhes técnicos em [MICROSERVICES_ARCHITECTURE.md](MICROSERVICES_ARCHITECTURE.md).
+
 > [!IMPORTANT]
 > **TDD (Test-Driven Development):** Todas as camadas de serviço e DAO são cobertas por testes unitários e de integração utilizando **JUnit 5** e **Mockito**.
 
