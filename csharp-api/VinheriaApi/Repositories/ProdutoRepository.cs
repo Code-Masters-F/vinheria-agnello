@@ -9,6 +9,12 @@ namespace VinheriaApi.Repositories
 {
     public class ProdutoRepository : IProdutoRepository
     {
+        // As colunas do banco são snake_case (vinheria_id); sem os aliases o Dapper não preenche
+        // VinheriaId e todo produto lido voltava com o valor padrão do modelo (1), quebrando a
+        // checagem de dono do produto (multi-tenant).
+        private const string ColunasProduto =
+            "id AS Id, vinheria_id AS VinheriaId, nome AS Nome, tipo AS Tipo, descricao AS Descricao, preco AS Preco, estoque AS Estoque";
+
         private readonly string _connectionString;
 
         public ProdutoRepository(string connectionString)
@@ -24,13 +30,14 @@ namespace VinheriaApi.Repositories
         public async Task<IEnumerable<Produto>> GetAllAsync()
         {
             using var connection = CreateConnection();
-            return await connection.QueryAsync<Produto>("SELECT * FROM produto");
+            // [TokenOptimization] - Seleciona só as colunas mapeadas no modelo, em vez de SELECT *.
+            return await connection.QueryAsync<Produto>($"SELECT {ColunasProduto} FROM produto ORDER BY id");
         }
 
         public async Task<Produto?> GetByIdAsync(long id)
         {
             using var connection = CreateConnection();
-            return await connection.QueryFirstOrDefaultAsync<Produto>("SELECT * FROM produto WHERE id = @Id", new { Id = id });
+            return await connection.QueryFirstOrDefaultAsync<Produto>($"SELECT {ColunasProduto} FROM produto WHERE id = @Id", new { Id = id });
         }
 
         public async Task<long> CreateAsync(Produto produto)

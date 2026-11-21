@@ -1,86 +1,90 @@
-using VinheriaApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using VinheriaApi.Endpoints;
 using VinheriaApi.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opcoes =>
+{
+    // Permite testar as rotas protegidas pelo Swagger UI colando o token da Identidade.
+    opcoes.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Token obtido em POST /api/v1/identidade/login (serviço de Identidade).",
+    });
+    opcoes.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
+            Array.Empty<string>()
+        },
+    });
+});
+builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' not found. Defina a variável de ambiente ConnectionStrings__DefaultConnection.");
 
-builder.Services.AddScoped<IProdutoRepository>(sp => new ProdutoRepository(connectionString));
+// ---------- Autenticação: tokens emitidos pelo serviço de Identidade ----------
+// O Catálogo não conhece senhas nem a chave privada. Com Authority = URL da Identidade, o middleware lê
+// /.well-known/openid-configuration, baixa a chave pública do JWKS (pelo DNS, ex.: identidade.vinheria.local)
+// e valida assinatura RS256, issuer, audience e expiração de cada token.
+var jwt = builder.Configuration.GetSection("Jwt");
+var authority = jwt["Authority"]
+    ?? throw new InvalidOperationException("Jwt:Authority não configurado. Defina a variável de ambiente Jwt__Authority (URL do serviço de Identidade).");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opcoes =>
+    {
+        opcoes.Authority = authority;
+        opcoes.Audience = jwt["Audience"] ?? "vinheria";
+        // HTTPS obrigatório por padrão; só é desligado explicitamente (Jwt__RequireHttpsMetadata=false)
+        // na demonstração de tráfego sem criptografia.
+        opcoes.RequireHttpsMetadata = jwt.GetValue("RequireHttpsMetadata", true);
+        // Mantém os nomes das claims como emitidos pela Identidade (role, vinheria_id).
+        opcoes.MapInboundClaims = false;
+        // Token com kid desconhecido (ex.: a Identidade trocou de chave) força nova busca do JWKS, mas a
+        // biblioteca limita essas buscas a uma por RefreshInterval (padrão: 5 min). Com 1 min, uma troca de
+        // chave deixa de bloquear logins por tanto tempo, sem permitir que tokens forjados sobrecarreguem a Identidade.
+        opcoes.RefreshInterval = TimeSpan.FromSeconds(jwt.GetValue("RefreshIntervalSegundos", 60));
+        opcoes.TokenValidationParameters = new TokenValidationParameters
+        {
+            NameClaimType = "name",
+            RoleClaimType = "role",
+            ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 },
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddAuthorization(opcoes =>
+    opcoes.AddPolicy(ProdutoEndpoints.PoliticaAdmin, politica => politica.RequireRole("Admin")));
+
+// [TokenOptimization] - Repositório com connection string resolvida uma única vez na inicialização.
+builder.Services.AddScoped<IProdutoRepository>(_ => new ProdutoRepository(connectionString));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
-// US1 Endpoints
-app.MapGet("/api/produtos", async (IProdutoRepository repository) =>
-{
-    return Results.Ok(await repository.GetAllAsync());
-})
-.WithName("GetProdutos")
-.WithOpenApi();
-
-app.MapGet("/api/produtos/{id:long}", async (long id, IProdutoRepository repository) =>
-{
-    var produto = await repository.GetByIdAsync(id);
-    return produto is not null ? Results.Ok(produto) : Results.NotFound();
-})
-.WithName("GetProdutoById")
-.WithOpenApi();
-
-app.MapPost("/api/produtos", async (Produto produto, IProdutoRepository repository) =>
-{
-    var id = await repository.CreateAsync(produto);
-    produto.Id = id;
-    return Results.Created($"/api/produtos/{id}", produto);
-})
-.WithName("CreateProduto")
-.WithOpenApi();
-
-app.MapPut("/api/produtos/{id:long}", async (long id, Produto produto, IProdutoRepository repository) =>
-{
-    if (id != produto.Id)
-    {
-        return Results.BadRequest();
-    }
-
-    var existingProduto = await repository.GetByIdAsync(id);
-    if (existingProduto is null)
-    {
-        return Results.NotFound();
-    }
-
-    var updated = await repository.UpdateAsync(produto);
-    return updated ? Results.NoContent() : Results.NotFound();
-})
-.WithName("UpdateProduto")
-.WithOpenApi();
-
-app.MapDelete("/api/produtos/{id:long}", async (long id, IProdutoRepository repository) =>
-{
-    var existingProduto = await repository.GetByIdAsync(id);
-    if (existingProduto is null)
-    {
-        return Results.NotFound();
-    }
-
-    var deleted = await repository.DeleteAsync(id);
-    return deleted ? Results.NoContent() : Results.NotFound();
-})
-.WithName("DeleteProduto")
-.WithOpenApi();
+app.MapHealthChecks("/health");
+// Rota alinhada à arquitetura de microsserviços + rota original da spec 010, ambas com as mesmas regras.
+app.MapProdutoEndpoints("/api/v1/catalogo/produtos", nomear: true);
+app.MapProdutoEndpoints("/api/produtos", nomear: false);
 
 app.Run();
 
