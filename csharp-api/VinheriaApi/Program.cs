@@ -1,8 +1,10 @@
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using VinheriaApi.Endpoints;
 using VinheriaApi.Repositories;
+using VinheriaApi.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +42,13 @@ var jwt = builder.Configuration.GetSection("Jwt");
 var authority = jwt["Authority"]
     ?? throw new InvalidOperationException("Jwt:Authority não configurado. Defina a variável de ambiente Jwt__Authority (URL do serviço de Identidade).");
 
+// CA interna que emitiu o certificado HTTPS da Identidade. Lida na inicialização (falha rápida se o
+// caminho estiver errado); sem ela, vale o repositório de certificados do sistema.
+var caCertPath = jwt["CaCertPath"];
+var caInterna = string.IsNullOrWhiteSpace(caCertPath)
+    ? null
+    : X509Certificate2.CreateFromPem(File.ReadAllText(caCertPath));
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opcoes =>
@@ -55,6 +64,11 @@ builder.Services
         // biblioteca limita essas buscas a uma por RefreshInterval (padrão: 5 min). Com 1 min, uma troca de
         // chave deixa de bloquear logins por tanto tempo, sem permitir que tokens forjados sobrecarreguem a Identidade.
         opcoes.RefreshInterval = TimeSpan.FromSeconds(jwt.GetValue("RefreshIntervalSegundos", 60));
+        if (caInterna is not null)
+        {
+            // [TokenOptimization] - Handler criado uma vez e reutilizado pelo cliente HTTP do JWKS.
+            opcoes.BackchannelHttpHandler = ValidacaoTls.CriarHandlerConfiandoNaCa(caInterna);
+        }
         opcoes.TokenValidationParameters = new TokenValidationParameters
         {
             NameClaimType = "name",
@@ -76,6 +90,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+else
+{
+    // HSTS: em respostas HTTPS, instrui o navegador a nunca mais usar HTTP para este host.
+    app.UseHsts();
 }
 
 app.UseAuthentication();

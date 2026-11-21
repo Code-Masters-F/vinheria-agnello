@@ -37,6 +37,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // HSTS: em respostas HTTPS, instrui o navegador a nunca mais usar HTTP para este host.
+    app.UseHsts();
+}
 
 app.MapHealthChecks("/health");
 app.MapDescobertaEndpoints();

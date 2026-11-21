@@ -2,9 +2,15 @@
 # Vinheria Agnello — ambiente simulado dos microsserviços (Fase 7)
 # =====================================================================
 #
-#   ./infra/scripts/configurar-ambiente.sh   # 1x: gera chave JWT e senhas no .env
-#   docker compose up -d --build
-#   ./infra/scripts/verificar-rede.sh        # evidências de DHCP, DNS e comunicação
+#   ./infra/scripts/configurar-ambiente.sh   # 1x: gera chave JWT, CA interna, certificados e senhas
+#   docker compose up -d --build             # HTTPS (padrão)
+#   ./infra/scripts/verificar-rede.sh        # evidências de DHCP, DNS, TLS e comunicação
+#
+#   Demonstração SEM criptografia (Wireshark), depois volte com "docker compose up -d":
+#   docker compose -f docker-compose.yml -f docker-compose.inseguro.yml up -d
+#
+# Portas no host (somente 127.0.0.1):  Identidade 8441 (HTTPS) / 8081 (HTTP, modo inseguro)
+#                                      Catálogo   8442 (HTTPS) / 8082 (HTTP, modo inseguro)
 #
 # Componentes na rede vinheria-net (172.30.0.0/24, interface do host: br-vinheria):
 #   dns        dnsmasq: DHCP (172.30.0.200–250) + DNS da zona vinheria.local   IP fixo 172.30.0.2
@@ -29,7 +35,8 @@ x-dns-vinheria: &dns-vinheria
     - vinheria.local
 
 x-healthcheck-api: &healthcheck-api
-  test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+  # HTTPS no modo padrão (certificado verificado contra a CA interna); HTTP no modo inseguro de demonstração
+  test: ["CMD-SHELL", "SSL_CERT_FILE=/run/secrets/tls/ca.crt wget -q -O /dev/null https://127.0.0.1:8443/health || wget -q -O /dev/null http://127.0.0.1:8080/health"]
   interval: 10s
   timeout: 3s
   retries: 5
@@ -80,7 +87,8 @@ services:
       - NET_ADMIN          # só este container mexe na interface; o serviço .NET roda sem privilégios
     command: ["-x", "hostname:identidade"]
     ports:
-      - "127.0.0.1:8081:8080"
+      - "127.0.0.1:8441:8443"   # HTTPS
+      - "127.0.0.1:8081:8080"   # HTTP (só responde no modo inseguro)
     networks:
       - vinheria-net
     depends_on:
@@ -92,13 +100,21 @@ services:
     container_name: vinheria-identidade
     network_mode: service:identidade-rede
     environment:
+      # Somente HTTPS (o modo inseguro sobrescreve para HTTP)
+      ASPNETCORE_URLS: https://+:8443
+      Kestrel__Certificates__Default__Path: /run/secrets/tls/servico.crt
+      Kestrel__Certificates__Default__KeyPath: /run/secrets/tls/servico.key
       ConnectionStrings__IdentidadeDb: Host=db.vinheria.local;Database=identidade_db;Username=identidade_app;Password=${IDENTIDADE_DB_PASSWORD}
-      Jwt__Issuer: http://identidade.vinheria.local:8080
+      Jwt__Issuer: https://identidade.vinheria.local:8443
       Jwt__Audience: vinheria
       # Chave fixa: reiniciar o serviço não invalida os tokens nem obriga o Catálogo a rebuscar o JWKS
       Jwt__ChavePrivadaPath: /run/secrets/jwt-privada.pem
     volumes:
       - ./infra/secrets/jwt-privada.pem:/run/secrets/jwt-privada.pem:ro,z
+      # Só o certificado e a chave do próprio serviço (a chave da CA nunca entra nos containers)
+      - ./infra/secrets/tls/identidade.crt:/run/secrets/tls/servico.crt:ro,z
+      - ./infra/secrets/tls/identidade.key:/run/secrets/tls/servico.key:ro,z
+      - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
     depends_on:
       identidade-rede:
         condition: service_started
@@ -117,7 +133,8 @@ services:
       - NET_ADMIN
     command: ["-x", "hostname:catalogo"]
     ports:
-      - "127.0.0.1:8082:8080"
+      - "127.0.0.1:8442:8443"   # HTTPS
+      - "127.0.0.1:8082:8080"   # HTTP (só responde no modo inseguro)
     networks:
       - vinheria-net
     depends_on:
@@ -129,12 +146,19 @@ services:
     container_name: vinheria-catalogo
     network_mode: service:catalogo-rede
     environment:
+      ASPNETCORE_URLS: https://+:8443
+      Kestrel__Certificates__Default__Path: /run/secrets/tls/servico.crt
+      Kestrel__Certificates__Default__KeyPath: /run/secrets/tls/servico.key
       ConnectionStrings__DefaultConnection: Host=db.vinheria.local;Database=catalogo_db;Username=catalogo_app;Password=${CATALOGO_DB_PASSWORD}
-      # Mesma URL do Jwt__Issuer da Identidade; o JWKS é buscado por esse nome (DNS do dnsmasq)
-      Jwt__Authority: http://identidade.vinheria.local:8080
+      # Mesma URL do Jwt__Issuer da Identidade; o JWKS é buscado por esse nome (DNS do dnsmasq) via HTTPS
+      Jwt__Authority: https://identidade.vinheria.local:8443
       Jwt__Audience: vinheria
-      # HTTP sem TLS apenas para a demonstração de tráfego inseguro (Wireshark)
-      Jwt__RequireHttpsMetadata: "false"
+      # Ao buscar o JWKS, só confia em certificados emitidos pela CA interna da Vinheria
+      Jwt__CaCertPath: /run/secrets/tls/ca.crt
+    volumes:
+      - ./infra/secrets/tls/catalogo.crt:/run/secrets/tls/servico.crt:ro,z
+      - ./infra/secrets/tls/catalogo.key:/run/secrets/tls/servico.key:ro,z
+      - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
     depends_on:
       catalogo-rede:
         condition: service_started

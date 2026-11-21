@@ -1,0 +1,21 @@
+# =====================================================================
+# MODO INSEGURO — somente para a demonstração de tráfego sem criptografia (Wireshark)
+# =====================================================================
+#
+#   docker compose -f docker-compose.yml -f docker-compose.inseguro.yml up -d
+#
+# Os serviços passam a responder apenas em HTTP (porta 8080; no host: 8081 e 8082) e o Catálogo
+# busca o JWKS da Identidade sem TLS. Senhas, tokens e respostas trafegam em texto puro na
+# interface br-vinheria. Para voltar ao modo seguro (HTTPS): docker compose up -d
+
+services:
+  identidade:
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      Jwt__Issuer: http://identidade.vinheria.local:8080
+
+  catalogo:
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      Jwt__Authority: http://identidade.vinheria.local:8080
+      Jwt__RequireHttpsMetadata: "false"
