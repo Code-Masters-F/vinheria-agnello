@@ -39,4 +39,15 @@ jobs:
             lightweight(false)
           }
         }
+        // Gatilho declarado aqui (e não só no Jenkinsfile): o JCasC recria o job a cada inicialização do
+        // Jenkins, e sem isso o deploy automático só voltaria a funcionar depois de um build manual.
+        properties {
+          pipelineTriggers {
+            triggers {
+              pollSCM {
+                scmpoll_spec('H/2 * * * *')
+              }
+            }
+          }
+        }
       }
