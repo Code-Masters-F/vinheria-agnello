@@ -21,6 +21,10 @@ namespace VinheriaApi.Tests
             _mockRepo = new Mock<IProdutoRepository>();
             _factory = factory.WithWebHostBuilder(builder =>
             {
+                // Connection string fictícia (repositório mockado) e autenticação com chave de teste.
+                // [TokenOptimization] - Configuração injetada uma vez por fixture, sem depender do ambiente da máquina.
+                builder.ConfigurarParaTestes();
+
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing registration
@@ -40,7 +44,7 @@ namespace VinheriaApi.Tests
             var response = await client.GetAsync("/api/produtos");
             response.EnsureSuccessStatusCode();
             var produtos = await response.Content.ReadFromJsonAsync<Produto[]>();
-            Assert.Single(produtos);
+            Assert.Single(produtos!);
         }
 
         [Fact]
@@ -51,14 +55,14 @@ namespace VinheriaApi.Tests
             var response = await client.GetAsync("/api/produtos/1");
             response.EnsureSuccessStatusCode();
             var produto = await response.Content.ReadFromJsonAsync<Produto>();
-            Assert.Equal(1, produto.Id);
+            Assert.Equal(1, produto!.Id);
         }
 
         [Fact]
         public async Task CreateProduto_ReturnsCreated()
         {
             _mockRepo.Setup(repo => repo.CreateAsync(It.IsAny<Produto>())).ReturnsAsync(1);
-            var client = _factory.CreateClient();
+            var client = ClienteAdmin();
             var response = await client.PostAsJsonAsync("/api/produtos", new Produto { Nome = "Test" });
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
@@ -68,7 +72,7 @@ namespace VinheriaApi.Tests
         {
             _mockRepo.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(new Produto { Id = 1, Nome = "Test" });
             _mockRepo.Setup(repo => repo.UpdateAsync(It.IsAny<Produto>())).ReturnsAsync(true);
-            var client = _factory.CreateClient();
+            var client = ClienteAdmin();
             var response = await client.PutAsJsonAsync("/api/produtos/1", new Produto { Id = 1, Nome = "Updated" });
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
@@ -78,9 +82,17 @@ namespace VinheriaApi.Tests
         {
             _mockRepo.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(new Produto { Id = 1, Nome = "Test" });
             _mockRepo.Setup(repo => repo.DeleteAsync(1)).ReturnsAsync(true);
-            var client = _factory.CreateClient();
+            var client = ClienteAdmin();
             var response = await client.DeleteAsync("/api/produtos/1");
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+
+        private System.Net.Http.HttpClient ClienteAdmin()
+        {
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", TokensDeTeste.Admin());
+            return client;
         }
     }
 }

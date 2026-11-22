@@ -1,0 +1,44 @@
+#!/bin/sh
+# Script de eventos do udhcpc (cliente DHCP do BusyBox), executado a cada mudança na concessão.
+#
+# Diferente do script padrão do BusyBox, este NÃO remove o IP atribuído pelo Docker: ele continua
+# sendo usado pela publicação de portas para o host (ex.: 127.0.0.1:8081). O IP recebido do DHCP é
+# ADICIONADO à interface, é o endereço registrado no DNS (dnsmasq) e passa a ser o endereço de
+# origem das conexões novas dentro da rede vinheria-net.
+#
+# Variáveis fornecidas pelo udhcpc: interface, ip, mask (bits), router, dns, domain, lease.
+
+ARQUIVO_IP=/tmp/udhcpc-ip
+
+remover_ip_anterior() {
+    [ -f "$ARQUIVO_IP" ] && ip addr del "$(cat "$ARQUIVO_IP")" dev "$interface" 2>/dev/null
+    rm -f "$ARQUIVO_IP"
+}
+
+case "$1" in
+    deconfig)
+        # Início ou perda da concessão: remove somente o IP que veio do DHCP.
+        remover_ip_anterior
+        ;;
+
+    bound|renew)
+        novo="$ip/$mask"
+        if [ -f "$ARQUIVO_IP" ] && [ "$(cat "$ARQUIVO_IP")" != "$novo" ]; then
+            remover_ip_anterior
+        fi
+        ip addr add "$novo" dev "$interface" 2>/dev/null
+        echo "$novo" > "$ARQUIVO_IP"
+
+        # Conexões novas na sub-rede passam a sair com o IP do DHCP.
+        rede=$(ip -4 route show dev "$interface" scope link | awk 'NR==1 {print $1}')
+        [ -n "$rede" ] && ip route replace "$rede" dev "$interface" scope link src "$ip"
+
+        echo "[dhcp] $1: $ip/$mask | gateway $router | dns $dns | domínio $domain | concessão ${lease}s"
+        ;;
+
+    leasefail|nak)
+        echo "[dhcp] $1: sem resposta do servidor DHCP, tentando novamente"
+        ;;
+esac
+
+exit 0

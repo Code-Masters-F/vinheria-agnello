@@ -1,0 +1,53 @@
+# Jenkins Configuration as Code (JCasC): toda a configuração do Jenkins fica versionada.
+# Variáveis ${...} vêm do ambiente do container (docker-compose.yml / .env).
+
+jenkins:
+  systemMessage: "Vinheria Agnello — CI/CD dos microsserviços Identidade e Catálogo (Fase 7)"
+  # Laboratório com um único nó: os builds rodam no próprio controlador
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          name: "Administrador"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  # Proteção CSRF (crumb) já vem ativa por padrão no Jenkins
+
+unclassified:
+  location:
+    url: "http://localhost:8090/"
+
+jobs:
+  - script: |
+      pipelineJob('vinheria-deploy') {
+        displayName('Vinheria — build, testes e deploy')
+        description('Pipeline da Fase 7: build, testes, verificação de vulnerabilidades, publicação na pasta de produção e verificação pós-deploy dos microsserviços Identidade e Catálogo.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${VINHERIA_REPO_URL}') }
+                branch('${VINHERIA_BRANCH}')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(false)
+          }
+        }
+        // Gatilho declarado aqui (e não só no Jenkinsfile): o JCasC recria o job a cada inicialização do
+        // Jenkins, e sem isso o deploy automático só voltaria a funcionar depois de um build manual.
+        properties {
+          pipelineTriggers {
+            triggers {
+              pollSCM {
+                scmpoll_spec('H/2 * * * *')
+              }
+            }
+          }
+        }
+      }

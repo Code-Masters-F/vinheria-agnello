@@ -1,6 +1,7 @@
 # Build e Artefatos
 target/
 bin/
+obj/
 build/
 out/
 .gradle/
@@ -48,6 +49,8 @@ out/
 *.keystore
 *.p12
 *.pem
+*.key
+*.pfx
 local.properties
 google-services.json
 .env
@@ -81,3 +84,12 @@ specs/
 
 # CONTEXTO IA
 CONTEXTO.MD
+
+# Segredos locais do docker-compose (chave JWT)
+infra/secrets/
+
+# Pasta de publicação (deploy do Jenkins)
+/publicacao/
+
+# Capturas de tráfego da demonstração (contêm senhas e tokens de teste)
+/capturas/

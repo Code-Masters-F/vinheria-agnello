@@ -1,0 +1,236 @@
+# =====================================================================
+# Vinheria Agnello — ambiente simulado dos microsserviços (Fase 7)
+# =====================================================================
+#
+#   ./infra/scripts/configurar-ambiente.sh   # 1x: chave JWT, CA, certificados, senhas e deploy inicial
+#   docker compose up -d --build             # HTTPS (padrão)
+#   ./infra/scripts/verificar-rede.sh        # evidências de DHCP, DNS, TLS e comunicação
+#   Jenkins: http://localhost:8090 (usuário admin, senha JENKINS_ADMIN_PASSWORD do .env)
+#
+#   Demonstração SEM criptografia (Wireshark), depois volte com "docker compose up -d":
+#   docker compose -f docker-compose.yml -f docker-compose.inseguro.yml up -d
+#
+# Portas no host (somente 127.0.0.1):  Identidade 8441 (HTTPS) / 8081 (HTTP, modo inseguro)
+#                                      Catálogo   8442 (HTTPS) / 8082 (HTTP, modo inseguro)
+#
+# Componentes na rede vinheria-net (172.30.0.0/24, interface do host: br-vinheria):
+#   dns        dnsmasq: DHCP (172.30.0.200–250) + DNS da zona vinheria.local   IP fixo 172.30.0.2
+#   db         PostgreSQL com um banco e um usuário por serviço              IP fixo 172.30.0.10
+#   identidade login + emissão de JWT (RS256) + JWKS                          IP via DHCP
+#   catalogo   produtos; valida os tokens buscando o JWKS na Identidade       IP via DHCP
+#   jenkins    CI/CD: build, testes, segurança e deploy na pasta ./publicacao  IP fixo 172.30.0.20
+#
+# Deploy (simula o IIS): o Jenkins publica cada versão em ./publicacao/<servico>/releases/<build> e
+# troca o link "atual". Os containers identidade/catalogo são servidores de aplicação (só o runtime
+# do .NET) que executam a versão em "atual" e reciclam o processo quando ela muda.
+#   *-rede     dono da interface de rede de cada serviço: obtém o IP no DHCP, registra o nome
+#              no DNS e publica as portas. O container do serviço .NET entra nessa rede
+#              (network_mode), como o container "pause" de um pod do Kubernetes. Assim, reiniciar
+#              o serviço (deploy, falha) não perde o IP nem o registro no DNS.
+#
+# Os serviços se comunicam SEMPRE pelo nome completo (*.vinheria.local), resolvido pelo dnsmasq.
+# Nomes curtos (ex.: "identidade") são respondidos pelo DNS interno do Docker com o IP do Docker,
+# não com o registrado pelo DHCP.
+
+name: vinheria
+
+x-dns-vinheria: &dns-vinheria
+  dns:
+    - 172.30.0.2
+  dns_search:
+    - vinheria.local
+
+# Servidor de aplicação: imagem só com o runtime do .NET; o código vem da pasta de publicação
+x-servidor-app: &servidor-app
+  image: mcr.microsoft.com/dotnet/aspnet:8.0-alpine
+  user: app                # usuário não-root (uid 1654) da imagem oficial
+  entrypoint: ["/bin/sh", "/opt/vinheria/executar.sh"]
+
+x-healthcheck-api: &healthcheck-api
+  # HTTPS no modo padrão (certificado verificado contra a CA interna); HTTP no modo inseguro de demonstração
+  test: ["CMD-SHELL", "SSL_CERT_FILE=/run/secrets/tls/ca.crt wget -q -O /dev/null https://127.0.0.1:8443/health || wget -q -O /dev/null http://127.0.0.1:8080/health"]
+  interval: 10s
+  timeout: 3s
+  retries: 5
+  start_period: 10s
+
+services:
+  dns:
+    build: infra/dnsmasq
+    container_name: vinheria-dns
+    hostname: dns
+    cap_add:
+      - NET_ADMIN          # necessário para o servidor DHCP
+    volumes:
+      # Concessões DHCP persistidas: ao reiniciar, o dnsmasq recupera os nomes registrados no DNS
+      - dns-concessoes:/var/lib/misc
+    networks:
+      vinheria-net:
+        ipv4_address: 172.30.0.2
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: vinheria-db
+    hostname: db
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env (rode infra/scripts/configurar-ambiente.sh)}
+      IDENTIDADE_DB_PASSWORD: ${IDENTIDADE_DB_PASSWORD:?Defina IDENTIDADE_DB_PASSWORD no .env}
+      CATALOGO_DB_PASSWORD: ${CATALOGO_DB_PASSWORD:?Defina CATALOGO_DB_PASSWORD no .env}
+    volumes:
+      - ./infra/postgres/00-criar-bancos.sh:/docker-entrypoint-initdb.d/00-criar-bancos.sh:ro,z
+      - ./identidade-api/database/init.sql:/sql/identidade.sql:ro,z
+      - ./csharp-api/database/init.sql:/sql/catalogo.sql:ro,z
+      - db-dados:/var/lib/postgresql/data
+    networks:
+      vinheria-net:
+        ipv4_address: 172.30.0.10
+    healthcheck:
+      # -h 127.0.0.1: só fica saudável depois da inicialização (o servidor temporário do init não escuta TCP)
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -q"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  identidade-rede:
+    build: infra/dhcp
+    container_name: vinheria-identidade-rede
+    hostname: identidade
+    <<: *dns-vinheria
+    cap_add:
+      - NET_ADMIN          # só este container mexe na interface; o serviço .NET roda sem privilégios
+    command: ["-x", "hostname:identidade"]
+    ports:
+      - "127.0.0.1:8441:8443"   # HTTPS
+      - "127.0.0.1:8081:8080"   # HTTP (só responde no modo inseguro)
+    networks:
+      - vinheria-net
+    depends_on:
+      - dns
+    restart: unless-stopped
+
+  identidade:
+    <<: *servidor-app
+    container_name: vinheria-identidade
+    command: ["IdentidadeApi.dll"]
+    network_mode: service:identidade-rede
+    environment:
+      # Somente HTTPS (o modo inseguro sobrescreve para HTTP)
+      ASPNETCORE_URLS: https://+:8443
+      Kestrel__Certificates__Default__Path: /run/secrets/tls/servico.crt
+      Kestrel__Certificates__Default__KeyPath: /run/secrets/tls/servico.key
+      ConnectionStrings__IdentidadeDb: Host=db.vinheria.local;Database=identidade_db;Username=identidade_app;Password=${IDENTIDADE_DB_PASSWORD}
+      Jwt__Issuer: https://identidade.vinheria.local:8443
+      Jwt__Audience: vinheria
+      # Chave fixa: reiniciar o serviço não invalida os tokens nem obriga o Catálogo a rebuscar o JWKS
+      Jwt__ChavePrivadaPath: /run/secrets/jwt-privada.pem
+    volumes:
+      # Pasta de publicação deste serviço, somente leitura (o serviço não altera o próprio código)
+      - ./publicacao/identidade:/publicacao:ro,z
+      - ./infra/runtime/executar.sh:/opt/vinheria/executar.sh:ro,z
+      - ./infra/secrets/jwt-privada.pem:/run/secrets/jwt-privada.pem:ro,z
+      # Só o certificado e a chave do próprio serviço (a chave da CA nunca entra nos containers)
+      - ./infra/secrets/tls/identidade.crt:/run/secrets/tls/servico.crt:ro,z
+      - ./infra/secrets/tls/identidade.key:/run/secrets/tls/servico.key:ro,z
+      - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
+    depends_on:
+      identidade-rede:
+        condition: service_started
+        restart: true        # se a rede for recriada, o serviço é reiniciado junto
+      db:
+        condition: service_healthy
+    healthcheck: *healthcheck-api
+    restart: unless-stopped
+
+  catalogo-rede:
+    build: infra/dhcp
+    container_name: vinheria-catalogo-rede
+    hostname: catalogo
+    <<: *dns-vinheria
+    cap_add:
+      - NET_ADMIN
+    command: ["-x", "hostname:catalogo"]
+    ports:
+      - "127.0.0.1:8442:8443"   # HTTPS
+      - "127.0.0.1:8082:8080"   # HTTP (só responde no modo inseguro)
+    networks:
+      - vinheria-net
+    depends_on:
+      - dns
+    restart: unless-stopped
+
+  catalogo:
+    <<: *servidor-app
+    container_name: vinheria-catalogo
+    command: ["VinheriaApi.dll"]
+    network_mode: service:catalogo-rede
+    environment:
+      ASPNETCORE_URLS: https://+:8443
+      Kestrel__Certificates__Default__Path: /run/secrets/tls/servico.crt
+      Kestrel__Certificates__Default__KeyPath: /run/secrets/tls/servico.key
+      ConnectionStrings__DefaultConnection: Host=db.vinheria.local;Database=catalogo_db;Username=catalogo_app;Password=${CATALOGO_DB_PASSWORD}
+      # Mesma URL do Jwt__Issuer da Identidade; o JWKS é buscado por esse nome (DNS do dnsmasq) via HTTPS
+      Jwt__Authority: https://identidade.vinheria.local:8443
+      Jwt__Audience: vinheria
+      # Ao buscar o JWKS, só confia em certificados emitidos pela CA interna da Vinheria
+      Jwt__CaCertPath: /run/secrets/tls/ca.crt
+    volumes:
+      - ./publicacao/catalogo:/publicacao:ro,z
+      - ./infra/runtime/executar.sh:/opt/vinheria/executar.sh:ro,z
+      - ./infra/secrets/tls/catalogo.crt:/run/secrets/tls/servico.crt:ro,z
+      - ./infra/secrets/tls/catalogo.key:/run/secrets/tls/servico.key:ro,z
+      - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
+    depends_on:
+      catalogo-rede:
+        condition: service_started
+        restart: true
+      db:
+        condition: service_healthy
+      identidade:
+        condition: service_started
+    healthcheck: *healthcheck-api
+    restart: unless-stopped
+
+  jenkins:
+    build: infra/jenkins
+    container_name: vinheria-jenkins
+    hostname: jenkins
+    <<: *dns-vinheria
+    environment:
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?Defina JENKINS_ADMIN_PASSWORD no .env (rode infra/scripts/configurar-ambiente.sh)}
+      # Repositório Git do pipeline (pode ser trocado no .env)
+      VINHERIA_REPO_URL: ${VINHERIA_REPO_URL:-https://github.com/Code-Masters-F/vinheria-agnello.git}
+      VINHERIA_BRANCH: ${VINHERIA_BRANCH:-*/main}
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      # Pasta de produção: o deploy do pipeline grava aqui (único acesso do Jenkins aos serviços)
+      - ./publicacao:/publicacao:z
+      # Certificado público da CA interna, para a verificação pós-deploy por HTTPS
+      - ./infra/secrets/tls/ca.crt:/run/secrets/tls/ca.crt:ro,z
+    ports:
+      - "127.0.0.1:8090:8080"
+    networks:
+      vinheria-net:
+        ipv4_address: 172.30.0.20
+    depends_on:
+      - dns
+    restart: unless-stopped
+
+networks:
+  vinheria-net:
+    name: vinheria-net
+    driver: bridge
+    driver_opts:
+      # Nome fixo da interface no host, para capturar o tráfego no Wireshark
+      com.docker.network.bridge.name: br-vinheria
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          ip_range: 172.30.0.64/26
+          gateway: 172.30.0.1
+
+volumes:
+  db-dados:
+  dns-concessoes:
+  jenkins-home:

@@ -3,6 +3,7 @@
 > Modelagem da arquitetura-alvo do sistema da Vinheria Agnello — Sprint 6 · 2026
 > Status: **planejamento**. O sistema atual (API Java monolítica + API C# de produtos + módulo de ML em Python) continua sendo a implementação em produção; este documento descreve para onde ele vai migrar.
 > Arquitetura atual (monolito em camadas): ver [PROJECT_ARCHITECTURE.md](PROJECT_ARCHITECTURE.md).
+> **Fase 7:** os serviços de **Identidade** e **Catálogo** foram implementados em .NET 8 num ambiente simulado (Docker, DHCP/DNS, HTTPS, Jenkins) — ver [FASE7_INFRA_DEVOPS.md](FASE7_INFRA_DEVOPS.md), incluindo as simplificações em relação a este documento.
 
 ---
 

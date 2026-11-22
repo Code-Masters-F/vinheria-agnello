@@ -131,10 +131,35 @@ Detalhes em [Arquitetura de Microsserviços](docs/MICROSERVICES_ARCHITECTURE.md)
 
 ---
 
+## 🚀 Fase 7 — Ambiente de microsserviços (Docker + Jenkins)
+
+Simulação de dois microsserviços da arquitetura acima — **Identidade** (login, JWT RS256, refresh token em cookie `httpOnly`) e **Catálogo** — com rede própria (**DHCP + DNS** via dnsmasq), **HTTPS** com CA interna, um banco por serviço e pipeline de **CI/CD no Jenkins** que publica cada versão numa pasta de produção (simulando o IIS).
+
+**Pré-requisitos:** Docker com Compose v2, git, bash, openssl e curl (no Windows, use o WSL 2; no macOS, o OpenSSL do Homebrew, porque o LibreSSL do sistema não aceita `-addext`). O .NET não é necessário.
+
+```bash
+./infra/scripts/configurar-ambiente.sh   # 1x: chaves, certificados, senhas (.env) e deploy inicial
+docker compose up -d --build             # 1ª vez: 5–15 min (downloads)
+./infra/scripts/verificar-rede.sh        # DHCP, DNS, TLS e fluxo de autenticação
+```
+
+| Endereço | O quê |
+|---|---|
+| `https://localhost:8441` | Identidade (login: `admin@agnello.com` / `admin123`) |
+| `https://localhost:8442` | Catálogo (`/api/v1/catalogo/produtos`) |
+| `http://localhost:8090` | Jenkins (usuário `admin`, senha `JENKINS_ADMIN_PASSWORD` do `.env`) |
+
+📖 **Passo a passo completo** (instalação por sistema operacional, uso dos serviços, Jenkins, demonstração no Wireshark, testes e solução de problemas): [Guia de execução da Fase 7](docs/FASE7_GUIA_EXECUCAO.md).
+Arquitetura, segurança e decisões: [Fase 7 — Infraestrutura, DevOps e Comunicação Segura](docs/FASE7_INFRA_DEVOPS.md).
+
+---
+
 ## 📄 Documentação Adicional
 
 - [Guia de Arquitetura](docs/PROJECT_ARCHITECTURE.md)
 - [Arquitetura de Microsserviços (Fase 6)](docs/MICROSERVICES_ARCHITECTURE.md)
+- [Fase 7 — Infraestrutura, DevOps e Comunicação Segura](docs/FASE7_INFRA_DEVOPS.md)
+- [Fase 7 — Guia de execução (passo a passo)](docs/FASE7_GUIA_EXECUCAO.md)
 - [Visão Geral do Produto](docs/PROJECT_OVERVIEW.md)
 - [Instruções para Agentes IA (AGENTS.md)](AGENTS.md) - Contém diretrizes cruciais de desenvolvimento, incluindo a **obrigatória** referência de otimização de uso de tokens em toda chamada de função/código.
 

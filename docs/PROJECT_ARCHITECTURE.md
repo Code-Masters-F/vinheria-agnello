@@ -1057,6 +1057,8 @@ Na Fase 6 foi modelada a migração do monolito descrito neste documento para **
 
 Durante a migração a API Java permanece ativa: o gateway aponta inicialmente para ela e cada rota é redirecionada ao microsserviço correspondente quando ele fica pronto.
 
+> **Fase 7:** primeiros microsserviços implementados — **Identidade** (`identidade-api/`) e **Catálogo** (`csharp-api/`) — com rede simulada (DHCP/DNS), HTTPS, banco por serviço e pipeline Jenkins. Ver [FASE7_INFRA_DEVOPS.md](FASE7_INFRA_DEVOPS.md).
+
 ---
 
 *Arquitetura v1.0 — Vinheiro · Sprint 1 · 2026*
