@@ -11,9 +11,27 @@ namespace VinheriaApi.Tests
     /// </summary>
     public class ConfiguracaoSegurancaTests
     {
-        // Casa "Password=<valor>" / "Pwd=<valor>" com valor não vazio (formato Npgsql/ADO.NET).
-        private static readonly Regex SenhaPreenchida =
-            new(@"(Password|Pwd)\s*=\s*[^;""\s]+", RegexOptions.IgnoreCase);
+        // Casa "Password=<valor>" (connection string Npgsql/ADO.NET) e "Password": "<valor>" (propriedade JSON),
+        // com valor não vazio.
+        private static readonly Regex SenhaPreenchida = new(
+            @"(Password|Pwd)\s*=\s*[^;""\s]+|""(Password|Pwd)""\s*:\s*""[^""]+""", RegexOptions.IgnoreCase);
+
+        [Theory]
+        [InlineData("Host=db;Password=segredo")]
+        [InlineData("{ \"Password\": \"segredo\" }")]
+        [InlineData("{ \"pwd\":\"segredo\" }")]
+        public void Regex_DetectaSenhaEmConnectionStringEEmPropriedadeJson(string conteudo)
+        {
+            Assert.Matches(SenhaPreenchida, conteudo);
+        }
+
+        [Theory]
+        [InlineData("Host=db;Password=")]
+        [InlineData("{ \"Password\": \"\" }")]
+        public void Regex_IgnoraSenhaVazia(string conteudo)
+        {
+            Assert.DoesNotMatch(SenhaPreenchida, conteudo);
+        }
 
         [Theory]
         [InlineData("appsettings.json")]

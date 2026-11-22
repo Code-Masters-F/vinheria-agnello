@@ -70,6 +70,15 @@ namespace VinheriaApi.Tests
         }
 
         [Fact]
+        public void CertificadoDaCaSemUsoParaServidorTls_EhRecusado()
+        {
+            // Emitido pela CA interna e com o nome certo, mas autorizado só para autenticação de cliente.
+            var somenteCliente = CriarCertificadoDeServidor(CaVinheria, Host, usoEstendido: "1.3.6.1.5.5.7.3.2");
+
+            Assert.False(ValidacaoTls.CertificadoConfiavel(somenteCliente, ErroDeCadeiaDoSistema, CaVinheria));
+        }
+
+        [Fact]
         public void SemCertificado_EhRecusado()
         {
             Assert.False(ValidacaoTls.CertificadoConfiavel(null, SslPolicyErrors.RemoteCertificateNotAvailable, CaVinheria));
@@ -114,13 +123,13 @@ namespace VinheriaApi.Tests
         }
 
         private static X509Certificate2 CriarCertificadoDeServidor(X509Certificate2 ca, string host,
-            DateTimeOffset? inicio = null, DateTimeOffset? fim = null)
+            DateTimeOffset? inicio = null, DateTimeOffset? fim = null, string usoEstendido = "1.3.6.1.5.5.7.3.1")
         {
             using var chave = RSA.Create(2048);
             var requisicao = new CertificateRequest($"CN={host}", chave, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             requisicao.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
             requisicao.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
-                new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false)); // serverAuth
+                new OidCollection { new Oid(usoEstendido) }, false)); // padrão: serverAuth
             var san = new SubjectAlternativeNameBuilder();
             san.AddDnsName(host);
             requisicao.CertificateExtensions.Add(san.Build());

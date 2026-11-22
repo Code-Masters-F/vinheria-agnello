@@ -12,10 +12,13 @@ namespace VinheriaApi.Security
     /// não conhece (por isso ele sempre reporta <see cref="SslPolicyErrors.RemoteCertificateChainErrors"/>).
     /// Em vez de desligar a validação, a cadeia é refeita confiando <b>somente</b> nessa CA
     /// (<see cref="X509ChainTrustMode.CustomRootTrust"/>): certificados de qualquer outra origem,
-    /// auto-assinados, expirados ou emitidos para outro nome são recusados.
+    /// auto-assinados, expirados, emitidos para outro nome ou sem uso para servidor TLS são recusados.
     /// </remarks>
     public static class ValidacaoTls
     {
+        // OID de "TLS Web Server Authentication" (extendedKeyUsage=serverAuth).
+        private const string UsoServidorTls = "1.3.6.1.5.5.7.3.1";
+
         private const SslPolicyErrors ErrosQueInvalidamSempre =
             SslPolicyErrors.RemoteCertificateNotAvailable | SslPolicyErrors.RemoteCertificateNameMismatch;
 
@@ -30,6 +33,8 @@ namespace VinheriaApi.Security
             cadeia.ChainPolicy.CustomTrustStore.Add(ca);
             // CA privada e ambiente de laboratório: não há lista de revogação publicada.
             cadeia.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+            // O certificado precisa ser autorizado para servidor TLS (um certificado só de cliente é recusado).
+            cadeia.ChainPolicy.ApplicationPolicy.Add(new System.Security.Cryptography.Oid(UsoServidorTls));
 
             return cadeia.Build(certificado);
         }

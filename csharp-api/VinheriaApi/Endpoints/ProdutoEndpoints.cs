@@ -70,6 +70,7 @@ namespace VinheriaApi.Endpoints
         private static async Task<IResult> CriarAsync(Produto produto, ClaimsPrincipal usuario, HttpRequest requisicao,
             IProdutoRepository repositorio)
         {
+            if (Validar(produto) is { } erros) return Results.ValidationProblem(erros);
             if (usuario.VinheriaId() is not long vinheriaId) return Results.Forbid();
 
             produto.VinheriaId = vinheriaId;
@@ -83,6 +84,7 @@ namespace VinheriaApi.Endpoints
             IProdutoRepository repositorio)
         {
             if (id != produto.Id) return Results.BadRequest();
+            if (Validar(produto) is { } erros) return Results.ValidationProblem(erros);
 
             var existente = await repositorio.GetByIdAsync(id);
             if (existente is null) return Results.NotFound();
@@ -102,6 +104,25 @@ namespace VinheriaApi.Endpoints
 
             var excluido = await repositorio.DeleteAsync(id);
             return excluido ? Results.NoContent() : Results.NotFound();
+        }
+
+        // Limites da tabela produto (database/init.sql). Validar antes de gravar devolve 400 com a explicação,
+        // em vez de deixar o PostgreSQL recusar o valor e a API responder 500.
+        private const int TamanhoMaximoNome = 150;
+        private const int TamanhoMaximoTipo = 20;
+        private const decimal PrecoMaximo = 99_999_999.99m; // DECIMAL(10,2)
+
+        private static Dictionary<string, string[]>? Validar(Produto produto)
+        {
+            // [TokenOptimization] - Validação em memória, antes de qualquer acesso ao banco.
+            var erros = new Dictionary<string, string[]>();
+            if (string.IsNullOrWhiteSpace(produto.Nome) || produto.Nome.Length > TamanhoMaximoNome)
+                erros[nameof(Produto.Nome)] = new[] { $"Obrigatório, com até {TamanhoMaximoNome} caracteres." };
+            if (string.IsNullOrWhiteSpace(produto.Tipo) || produto.Tipo.Length > TamanhoMaximoTipo)
+                erros[nameof(Produto.Tipo)] = new[] { $"Obrigatório, com até {TamanhoMaximoTipo} caracteres." };
+            if (produto.Preco < 0 || produto.Preco > PrecoMaximo)
+                erros[nameof(Produto.Preco)] = new[] { $"Deve estar entre 0 e {PrecoMaximo}." };
+            return erros.Count > 0 ? erros : null;
         }
 
         private static bool PertenceAVinheriaDoUsuario(Produto produto, ClaimsPrincipal usuario) =>

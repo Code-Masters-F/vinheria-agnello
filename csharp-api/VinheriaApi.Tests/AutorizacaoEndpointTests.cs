@@ -136,6 +136,31 @@ namespace VinheriaApi.Tests
             NenhumaEscritaNoBanco();
         }
 
+        // ---------- validação de entrada (limites da tabela produto) ----------
+
+        public static TheoryData<string, Produto> ProdutosInvalidos => new()
+        {
+            { "POST", new Produto { Nome = new string('a', 151), Tipo = "Tinto", Preco = 10 } },
+            { "POST", new Produto { Nome = " ", Tipo = "Tinto", Preco = 10 } },
+            { "POST", new Produto { Nome = "Vinho", Tipo = new string('t', 21), Preco = 10 } },
+            { "POST", new Produto { Nome = "Vinho", Tipo = "Tinto", Preco = -1 } },
+            { "POST", new Produto { Nome = "Vinho", Tipo = "Tinto", Preco = 100_000_000m } },
+            { "PUT", new Produto { Id = 1, Nome = new string('a', 151), Tipo = "Tinto", Preco = 10 } },
+        };
+
+        [Theory]
+        [MemberData(nameof(ProdutosInvalidos))]
+        public async Task Escrita_ComDadosForaDosLimites_Retorna400_SemGravar(string metodo, Produto produto)
+        {
+            var url = metodo == "PUT" ? Rota + "/1" : Rota;
+
+            var response = await EnviarAsync(metodo, url, TokensDeTeste.Admin(1), produto);
+
+            // Sem a validação, o PostgreSQL recusaria o valor e a API devolveria 500.
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            NenhumaEscritaNoBanco();
+        }
+
         // ---------- tokens inválidos ----------
 
         public static TheoryData<string> TokensInvalidos => new()
