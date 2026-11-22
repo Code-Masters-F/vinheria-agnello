@@ -135,7 +135,7 @@ Detalhes em [Arquitetura de Microsserviços](docs/MICROSERVICES_ARCHITECTURE.md)
 
 Simulação de dois microsserviços da arquitetura acima — **Identidade** (login, JWT RS256, refresh token em cookie `httpOnly`) e **Catálogo** — com rede própria (**DHCP + DNS** via dnsmasq), **HTTPS** com CA interna, um banco por serviço e pipeline de **CI/CD no Jenkins** que publica cada versão numa pasta de produção (simulando o IIS).
 
-**Pré-requisitos:** Docker com Compose v2, git, bash, openssl e curl (no Windows, use o WSL 2). O .NET não é necessário.
+**Pré-requisitos:** Docker com Compose v2, git, bash, openssl e curl (no Windows, use o WSL 2; no macOS, o OpenSSL do Homebrew, porque o LibreSSL do sistema não aceita `-addext`). O .NET não é necessário.
 
 ```bash
 ./infra/scripts/configurar-ambiente.sh   # 1x: chaves, certificados, senhas (.env) e deploy inicial

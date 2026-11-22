@@ -171,7 +171,7 @@ curl -s --cacert $CA -H "Authorization: Bearer $TOKEN" -H 'Content-Type: applica
 | `docker compose up -d` | Volta ao modo seguro (HTTPS) |
 | `./infra/scripts/gerar-trafego-demo.sh` | Gera o tráfego da demonstração (login, chamada autenticada, refresh, logout) |
 | `./infra/scripts/capturar-trafego.sh <nome>` | Captura a `br-vinheria` em `capturas/<nome>.pcap` (necessário no Windows/macOS) |
-| `./infra/scripts/rodar-testes.sh` | Roda os 70 testes (no .NET 8 local ou no container do SDK) |
+| `./infra/scripts/rodar-testes.sh` | Roda os 91 testes (no .NET 8 local ou no container do SDK) |
 | `./infra/scripts/rollback.sh identidade [versão]` | Volta um serviço para uma versão já publicada |
 | `docker compose down -v` | Remove tudo, inclusive bancos e Jenkins (volumes) |
 
@@ -219,7 +219,7 @@ sequenceDiagram
 flowchart LR
     dev["git push<br/>(GitHub)"] --> poll["Jenkins<br/>pollSCM ~2 min"]
     poll --> build["Build<br/>echo 'Deploy da Vinheria'<br/>dotnet build"]
-    build --> testes["Testes<br/>70 casos xUnit"]
+    build --> testes["Testes<br/>91 casos xUnit"]
     testes --> seg["Segurança<br/>pacotes vulneráveis?"]
     seg --> pub["Publicação<br/>releases/N + link atual"]
     pub --> ver["Verificação pós-deploy<br/>/versao = N, /health, 200/401"]
@@ -309,11 +309,12 @@ utilizável até expirar — por isso o JWT dura só 15 minutos e o refresh toke
 ### Parte C — DHCP e DNS (infraestrutura)
 
 1. Captura em `br-vinheria` com o filtro `dhcp or dns`.
-2. `docker compose restart identidade-rede` (o serviço pede um IP novo) e, em seguida,
+2. `docker compose restart identidade-rede` (o serviço libera a concessão e pede outra) e, em seguida,
    `./infra/scripts/verificar-rede.sh`.
 3. 📸 *DHCP Release* do IP antigo, *Discover* em broadcast (`0.0.0.0 → 255.255.255.255`), *Offer*, *Request* e *ACK*
    com o hostname `identidade`; depois, a consulta `A identidade.vinheria.local` respondida pelo dnsmasq (`172.30.0.2`)
-   com o IP novo.
+   com o IP da nova concessão. O endereço pode mudar ou se repetir (o dnsmasq tende a devolver o mesmo IP ao mesmo
+   cliente); o que a captura demonstra é a troca DHCP completa e o DNS respondendo com o IP concedido.
 
 ---
 
@@ -323,8 +324,8 @@ TDD em todas as funcionalidades novas (testes escritos antes, falhando, e depois
 
 | Projeto | Casos | Cobertura principal |
 |---|---|---|
-| `IdentidadeApi.Tests` | 28 | login (válido, senha errada, inexistente, inativo, hash corrompido, campos vazios), JWKS sem parâmetros privados, validação do token só com a chave pública, token adulterado, refresh token (cookie, hash, rotação, reuso, expiração, logout), `/versao`, ausência de segredos na configuração |
-| `VinheriaApi.Tests` | 42 | CRUD, RBAC (401/403/201), isolamento entre vinherias, tokens inválidos (expirado, outra chave, audience/issuer errados), validação TLS com a CA interna, `/versao`, ausência de senha na configuração |
+| `IdentidadeApi.Tests` | 37 | login (válido, senha errada, inexistente, inativo, hash corrompido, campos vazios), JWKS sem parâmetros privados, discovery com o issuer exato, validação do token só com a chave pública, token adulterado, chave de assinatura sem parte privada recusada, refresh token (cookie, hash, rotação, reuso derrubando todas as sessões, token expirado sem efeito, logout), `/versao`, ausência de segredos na configuração |
+| `VinheriaApi.Tests` | 54 | CRUD, RBAC (401/403/201), isolamento entre vinherias, limites de entrada (400 em vez de 500), tokens inválidos (expirado, outra chave, audience/issuer errados), validação TLS com a CA interna (inclusive certificado sem uso de servidor), `/versao`, ausência de senha na configuração |
 
 ```bash
 ./infra/scripts/rodar-testes.sh   # .NET 8 local, ou container do SDK 8 se ele não estiver instalado
@@ -349,6 +350,8 @@ TDD em todas as funcionalidades novas (testes escritos antes, falhando, e depois
 - Certificados emitidos por uma CA interna (autoassinada): navegadores só confiam após importar `ca.crt`.
 - Mudanças de schema do banco não fazem parte do pipeline: o `init.sql` da Identidade é idempotente e deve ser reaplicado em bancos existentes quando houver tabelas novas.
 - Depois de um logout, o JWT já emitido continua válido até expirar (é *stateless*); a mitigação adotada é a validade curta.
+- A rotação do refresh token é estrita: duas renovações simultâneas com o mesmo token (ex.: duas abas) são tratadas como reuso e encerram as sessões do usuário. É o comportamento mais seguro; um sistema em produção poderia aceitar uma pequena janela de tolerância.
+- As versões dos plugins do Jenkins não são fixadas (acompanham a imagem `lts`), e o `/health` indica se o processo responde, sem testar o banco; a verificação pós-deploy cobre o acesso ao banco do Catálogo.
 
 ---
 

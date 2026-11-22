@@ -248,7 +248,7 @@ docker compose up -d
 ./infra/scripts/rodar-testes.sh
 ```
 
-Executa os 70 testes (28 da Identidade + 42 do Catálogo) — os mesmos do pipeline. Usa o .NET local se ele tiver o
+Executa os 91 testes (37 da Identidade + 54 do Catálogo) — os mesmos do pipeline. Usa o .NET local se ele tiver o
 runtime do ASP.NET Core 8; senão, roda no container `mcr.microsoft.com/dotnet/sdk:8.0`.
 
 ---
@@ -275,7 +275,7 @@ runtime do ASP.NET Core 8; senão, roda no container `mcr.microsoft.com/dotnet/s
 | `docker: unknown command: docker compose` | Plugin Compose ausente | Fedora: `sudo dnf install docker-compose`; Ubuntu: `sudo apt install docker-compose-v2` (ou `docker-compose-plugin` do repositório oficial do Docker) |
 | `Cannot connect to the Docker daemon` | Docker parado | `sudo systemctl start docker` (Linux) ou abra o Docker Desktop |
 | `permission denied ... docker.sock` | Usuário fora do grupo `docker` | `sudo usermod -aG docker $USER` e logout/login |
-| `$'\r': command not found` ao rodar um script | Arquivo com quebra de linha do Windows | Clone dentro do WSL (o `.gitattributes` já força LF); em clones antigos: `git rm -r --cached . -q && git reset --hard` |
+| `$'\r': command not found` ao rodar um script | Arquivo com quebra de linha do Windows | Clone dentro do WSL (o `.gitattributes` já força LF). Em clones antigos, faça antes `git stash` ou commit das suas alterações (o comando a seguir descarta o que não estiver salvo) e rode `git rm -r --cached . -q && git reset --hard`; ou simplesmente clone de novo |
 | `Pool overlaps with other one on this address space` | A sub-rede `172.30.0.0/24` já é usada na máquina | Troque a sub-rede em `docker-compose.yml`, `infra/dnsmasq/dnsmasq.conf` e nos IPs fixos (`.2`, `.10`, `.20`) |
 | `port is already allocated` (8441, 8442, 8081, 8082, 8090) | Porta ocupada por outro programa | Encerre o programa ou altere a porta do host em `docker-compose.yml` |
 | Serviço não fica *healthy*; log `aguardando o primeiro deploy` | Pasta `publicacao/` sem versão | `./infra/scripts/configurar-ambiente.sh` (faz o deploy inicial) ou rode o pipeline no Jenkins |
@@ -283,7 +283,7 @@ runtime do ASP.NET Core 8; senão, roda no container `mcr.microsoft.com/dotnet/s
 | Token recusado (401) logo após trocar de modo | O emissor do token muda entre HTTP e HTTPS | Faça login de novo no modo atual |
 | Serviço não encontrado pelo nome (`*.vinheria.local`) | Concessão DHCP perdida | `docker compose restart identidade-rede` (ou `catalogo-rede`); o serviço reinicia junto e o DNS é atualizado |
 | `git push` não dispara o pipeline | O Jenkins verifica o repositório a cada ~2 min, e só a `main` | Aguarde ~2 min e confira o *Polling Log* do job; *Build Now* dispara na hora |
-| Jenkins falha na *Publicação* com `Permission denied` | Pasta `publicacao/` sem permissão para o Jenkins (uid 1000) | `chmod -R a+rwX publicacao` |
+| Jenkins falha na *Publicação* com `Permission denied` | Pasta `publicacao/` sem permissão para o Jenkins (uid 1000) | `setfacl -R -m u:1000:rwX -m d:u:1000:rwX publicacao` (pacote `acl`); o `configurar-ambiente.sh` já faz isso |
 | Login responde 500 depois de atualizar o código | Tabela nova ainda não existe no banco | Reaplique o `init.sql` (seção 10, "Atualizar após git pull") |
 | Testes falham com `PipeWriter.UnflushedBytes` | Testes rodando em .NET 9/10 | Use `./infra/scripts/rodar-testes.sh` (roda no .NET 8) |
 | `br-vinheria` não aparece no Wireshark (Windows/macOS) | A interface fica dentro da VM do Docker Desktop | Use `./infra/scripts/capturar-trafego.sh` e abra o `.pcap` |
