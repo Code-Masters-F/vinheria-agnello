@@ -18,6 +18,9 @@ RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PUBLICACAO="${PUBLICACAO:-$RAIZ/publicacao}"
 MANTER=5
 
+# A versão vira nome de pasta (e vai para um "sh -c" no modo sem .NET): só números, sem "../" nem aspas.
+[[ "$VERSAO" =~ ^[0-9]+$ ]] || { echo "Versão inválida: '$VERSAO' (use apenas números, ex.: número do build)" >&2; exit 2; }
+
 case "$SERVICO" in
     identidade) PROJETO="identidade-api/IdentidadeApi/IdentidadeApi.csproj" ;;
     catalogo)   PROJETO="csharp-api/VinheriaApi/VinheriaApi.csproj" ;;
@@ -49,10 +52,12 @@ rm -rf "$RELEASE"
 mv "$RELEASE.tmp" "$RELEASE"
 
 # Troca atômica do link "atual": o servidor nunca vê uma versão pela metade.
-ln -sfn "releases/$VERSAO" "$DESTINO_SERVICO/atual.novo"
+# Link temporário com o PID no nome: um rollback rodando ao mesmo tempo não usa o mesmo arquivo.
+TEMPORARIO="$DESTINO_SERVICO/atual.novo.$$"
+ln -sfn "releases/$VERSAO" "$TEMPORARIO"
 # GNU (Linux/WSL): mv -T troca o link de forma atômica. macOS/BSD: ln -sfn (troca quase instantânea).
-mv -Tf "$DESTINO_SERVICO/atual.novo" "$DESTINO_SERVICO/atual" 2>/dev/null \
-    || { rm -f "$DESTINO_SERVICO/atual.novo"; ln -sfn "releases/$VERSAO" "$DESTINO_SERVICO/atual"; }
+mv -Tf "$TEMPORARIO" "$DESTINO_SERVICO/atual" 2>/dev/null \
+    || { rm -f "$TEMPORARIO"; ln -sfn "releases/$VERSAO" "$DESTINO_SERVICO/atual"; }
 echo "==> $SERVICO/atual -> releases/$VERSAO"
 
 # Mantém apenas as últimas $MANTER versões (rollback)

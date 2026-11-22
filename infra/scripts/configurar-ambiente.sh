@@ -68,16 +68,38 @@ done
 chmod 600 "$TLS/ca.key"
 chmod 644 "$TLS"/*.crt "$TLS/identidade.key" "$TLS/catalogo.key"
 
-# ---------- Senhas do PostgreSQL ----------
+# ---------- Senhas do PostgreSQL e do Jenkins ----------
 touch "$ENV"
+# Só o dono lê o .env (ele guarda todas as senhas), mesmo com umask 022.
+chmod 600 "$ENV"
 # Garante quebra de linha no fim antes de acrescentar variáveis
 [ -s "$ENV" ] && [ -n "$(tail -c1 "$ENV")" ] && echo >> "$ENV"
 
+definida() { grep -qE "^$1=.+" "$ENV"; }
+
+# Senhas novas para um banco que já existe não funcionam: o PostgreSQL só cria os usuários na primeira
+# inicialização do volume. Se o .env se perdeu e o volume ficou, para aqui em vez de gerar senhas erradas.
+# O docker-compose.yml fixa o nome do projeto ("name: vinheria"), então o volume é vinheria_db-dados.
+VOLUME_DB="${COMPOSE_PROJECT_NAME:-vinheria}_db-dados"
+if ! { definida POSTGRES_PASSWORD && definida IDENTIDADE_DB_PASSWORD && definida CATALOGO_DB_PASSWORD; } \
+    && command -v docker >/dev/null 2>&1 && docker volume inspect "$VOLUME_DB" >/dev/null 2>&1; then
+    echo "✗ Faltam senhas do banco no .env, mas o volume $VOLUME_DB já existe com as senhas antigas." >&2
+    echo "  Restaure o .env anterior ou recrie o banco do zero: docker compose down -v (apaga os dados)." >&2
+    exit 1
+fi
+
 for VARIAVEL in POSTGRES_PASSWORD IDENTIDADE_DB_PASSWORD CATALOGO_DB_PASSWORD JENKINS_ADMIN_PASSWORD; do
-    if grep -q "^${VARIAVEL}=" "$ENV"; then
+    if definida "$VARIAVEL"; then
         echo "• $VARIAVEL já definida no .env"
     else
-        echo "${VARIAVEL}=$(openssl rand -hex 16)" >> "$ENV"
+        VALOR="$(openssl rand -hex 16)"
+        if grep -q "^${VARIAVEL}=" "$ENV"; then
+            # Linha existente com valor vazio (ex.: .env copiado do .env.example): preenche no lugar.
+            awk -v chave="$VARIAVEL" -v valor="$VALOR" 'index($0, chave "=") == 1 { $0 = chave "=" valor } { print }' \
+                "$ENV" > "$ENV.tmp" && cat "$ENV.tmp" > "$ENV" && rm -f "$ENV.tmp"
+        else
+            echo "${VARIAVEL}=${VALOR}" >> "$ENV"
+        fi
         echo "✔ $VARIAVEL gerada no .env"
     fi
 done
@@ -86,10 +108,16 @@ done
 for SERVICO in identidade catalogo; do
     mkdir -p "$RAIZ/publicacao/$SERVICO/releases"
 done
-# O Jenkins grava na pasta com o uid 1000; em hosts Linux com outro uid, libera a escrita.
+# O Jenkins grava na pasta com o uid 1000. Em hosts Linux com outro uid, a escrita é liberada só para
+# esse uid (ACL); liberar para todos permitiria a qualquer conta local trocar a versão em produção.
 if [ "$(uname -s)" = "Linux" ] && [ "$(id -u)" != "1000" ]; then
-    chmod -R a+rwX "$RAIZ/publicacao"
-    echo "• publicacao/ liberada para escrita do Jenkins (uid do host diferente de 1000)"
+    if command -v setfacl >/dev/null 2>&1; then
+        setfacl -R -m u:1000:rwX -m d:u:1000:rwX "$RAIZ/publicacao"
+        echo "• publicacao/ com escrita liberada apenas para o uid 1000 do Jenkins (ACL)"
+    else
+        chmod -R a+rwX "$RAIZ/publicacao"
+        echo "⚠ setfacl não encontrado (pacote acl): publicacao/ ficou gravável por todos os usuários do host."
+    fi
 fi
 for SERVICO in identidade catalogo; do
     if [ ! -e "$RAIZ/publicacao/$SERVICO/atual" ]; then

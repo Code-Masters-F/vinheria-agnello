@@ -16,6 +16,7 @@ ATUAL=$(basename "$(readlink "$PASTA/atual")")
 
 if [ -n "${2:-}" ]; then
     ALVO="$2"
+    [[ "$ALVO" =~ ^[0-9]+$ ]] || { echo "Versão inválida: '$ALVO' (use apenas números)" >&2; exit 2; }
 else
     ALVO=$(ls -1 "$PASTA/releases" | grep -E '^[0-9]+$' | sort -n | awk -v atual="$ATUAL" '$1 < atual' | tail -1)
 fi
@@ -26,8 +27,10 @@ if [ -z "$ALVO" ] || [ ! -d "$PASTA/releases/$ALVO" ]; then
     exit 1
 fi
 
-ln -sfn "releases/$ALVO" "$PASTA/atual.novo"
+# Link temporário com o PID no nome: um deploy rodando ao mesmo tempo não usa o mesmo arquivo.
+TEMPORARIO="$PASTA/atual.novo.$$"
+ln -sfn "releases/$ALVO" "$TEMPORARIO"
 # GNU (Linux/WSL): mv -T troca o link de forma atômica. macOS/BSD: ln -sfn (troca quase instantânea).
-mv -Tf "$PASTA/atual.novo" "$PASTA/atual" 2>/dev/null \
-    || { rm -f "$PASTA/atual.novo"; ln -sfn "releases/$ALVO" "$PASTA/atual"; }
+mv -Tf "$TEMPORARIO" "$PASTA/atual" 2>/dev/null \
+    || { rm -f "$TEMPORARIO"; ln -sfn "releases/$ALVO" "$PASTA/atual"; }
 echo "$SERVICO: versão $ATUAL -> $ALVO (o serviço recicla em poucos segundos)"

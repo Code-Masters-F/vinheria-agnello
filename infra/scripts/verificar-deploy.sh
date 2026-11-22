@@ -11,7 +11,8 @@ TEMPO_LIMITE="${TEMPO_LIMITE:-120}"
 # HTTPS (modo padrão) com o certificado verificado pela CA interna; HTTP só no modo inseguro de demonstração.
 url_base() {
     local servico="$1"
-    if curl -s -o /dev/null --max-time 3 --cacert "$CA" "https://$servico.vinheria.local:8443/health"; then
+    # --fail: só considera o serviço disponível se o /health responder 2xx.
+    if curl -sf -o /dev/null --max-time 3 --cacert "$CA" "https://$servico.vinheria.local:8443/health"; then
         echo "https://$servico.vinheria.local:8443"
     else
         echo "http://$servico.vinheria.local:8080"
@@ -19,12 +20,14 @@ url_base() {
 }
 
 versao_em_execucao() {
-    curl -s --max-time 3 --cacert "$CA" "$1/versao" | sed -nE 's/.*"versao":"([^"]*)".*/\1/p'
+    curl -sf --max-time 3 --cacert "$CA" "$1/versao" | sed -nE 's/.*"versao":"([^"]*)".*/\1/p'
 }
 
 for SERVICO in identidade catalogo; do
     ATUAL=""
-    for ((ESPERA = 0; ESPERA < TEMPO_LIMITE; ESPERA += 3)); do
+    # Prazo pelo relógio (SECONDS), não por número de voltas: cada volta pode levar até ~9 s com os timeouts.
+    PRAZO=$((SECONDS + TEMPO_LIMITE))
+    while [ "$SECONDS" -lt "$PRAZO" ]; do
         BASE=$(url_base "$SERVICO")
         ATUAL=$(versao_em_execucao "$BASE")
         [ "$ATUAL" = "$VERSAO" ] && break

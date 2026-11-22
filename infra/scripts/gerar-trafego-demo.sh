@@ -12,10 +12,11 @@ CA="$RAIZ/infra/secrets/tls/ca.crt"
 J='Content-Type: application/json'
 
 if curl -s -o /dev/null --max-time 3 --cacert "$CA" https://localhost:8441/health; then
-    MODO="HTTPS"; ID=https://localhost:8441; CAT=https://localhost:8442; CURL=(curl -s --cacert "$CA")
+    MODO="HTTPS"; ID=https://localhost:8441; CAT=https://localhost:8442; CURL=(curl -sS --fail --cacert "$CA")
 else
-    MODO="HTTP (inseguro)"; ID=http://127.0.0.1:8081; CAT=http://127.0.0.1:8082; CURL=(curl -s)
+    MODO="HTTP (inseguro)"; ID=http://127.0.0.1:8081; CAT=http://127.0.0.1:8082; CURL=(curl -sS --fail)
 fi
+# --fail: qualquer resposta 4xx/5xx interrompe o script (set -e), em vez de terminar com "Tráfego gerado".
 echo "Modo: $MODO"
 
 cookie_de() { sed -nE 's/^[Ss]et-[Cc]ookie: vinheria_refresh=([^;]*).*/\1/p' "$1" | tr -d '\r'; }
