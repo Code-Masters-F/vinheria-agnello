@@ -57,8 +57,10 @@ public sealed class AutenticacaoService : IAutenticacaoService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Hash inválido no banco: falha fechada (nega o acesso) em vez de erro 500.
+            // Hash inválido no banco: falha fechada (nega o acesso) em vez de erro 500. A verificação fictícia
+            // mantém o tempo de resposta igual ao de uma senha errada, para não revelar contas com hash danificado.
             _logger.LogError(ex, "Hash de senha inválido para o usuário {UsuarioId}", usuario.Id);
+            BCrypt.Net.BCrypt.Verify(senha, HashFicticio);
             return false;
         }
     }

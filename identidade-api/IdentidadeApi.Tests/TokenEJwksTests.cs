@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
 using IdentidadeApi.Contracts;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,10 +15,12 @@ namespace IdentidadeApi.Tests;
 /// </summary>
 public class TokenEJwksTests : IClassFixture<IdentidadeApiFactory>
 {
+    private readonly IdentidadeApiFactory _factory;
     private readonly HttpClient _client;
 
     public TokenEJwksTests(IdentidadeApiFactory factory)
     {
+        _factory = factory;
         // [TokenOptimization] - Um único HttpClient por classe de teste, reaproveitado entre os casos.
         _client = factory.CreateClient();
     }
@@ -30,6 +34,21 @@ public class TokenEJwksTests : IClassFixture<IdentidadeApiFactory>
         Assert.Equal(IdentidadeApiFactory.Issuer, raiz.GetProperty("issuer").GetString());
         Assert.Equal($"{IdentidadeApiFactory.Issuer}/.well-known/jwks.json", raiz.GetProperty("jwks_uri").GetString());
         Assert.Contains("RS256", raiz.GetProperty("id_token_signing_alg_values_supported").EnumerateArray().Select(e => e.GetString()));
+    }
+
+    [Fact]
+    public async Task OpenIdConfiguration_MantemOIssuerExatamenteComoConfigurado()
+    {
+        // O "iss" dos tokens usa o Issuer sem alterações; o discovery precisa informar o mesmo valor,
+        // senão o Catálogo recusaria todos os tokens. Só o jwks_uri é normalizado.
+        const string issuerComBarra = IdentidadeApiFactory.Issuer + "/";
+        var cliente = _factory.WithWebHostBuilder(b => b.ConfigureAppConfiguration((_, config) =>
+            config.AddInMemoryCollection(new Dictionary<string, string?> { ["Jwt:Issuer"] = issuerComBarra }))).CreateClient();
+
+        using var doc = await JsonDocument.ParseAsync(await cliente.GetStreamAsync("/.well-known/openid-configuration"));
+
+        Assert.Equal(issuerComBarra, doc.RootElement.GetProperty("issuer").GetString());
+        Assert.Equal($"{IdentidadeApiFactory.Issuer}/.well-known/jwks.json", doc.RootElement.GetProperty("jwks_uri").GetString());
     }
 
     [Fact]

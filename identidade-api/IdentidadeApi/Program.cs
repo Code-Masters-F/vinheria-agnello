@@ -42,6 +42,8 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    // Exceções não tratadas viram resposta Problem Details (500) sem expor detalhes internos.
+    app.UseExceptionHandler();
     // HSTS: em respostas HTTPS, instrui o navegador a nunca mais usar HTTP para este host.
     app.UseHsts();
 }

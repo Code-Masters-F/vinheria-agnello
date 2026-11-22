@@ -38,6 +38,7 @@ public sealed class ChaveAssinaturaProvider : IChaveAssinaturaProvider, IDisposa
             _rsa.ImportFromPem(File.ReadAllText(caminho));
             if (_rsa.KeySize < TamanhoMinimoBits)
                 throw new InvalidOperationException($"A chave RSA de assinatura deve ter ao menos {TamanhoMinimoBits} bits.");
+            GarantirChavePrivada(_rsa, caminho);
             logger.LogInformation("Chave de assinatura JWT carregada de {Caminho}", caminho);
         }
         else
@@ -53,6 +54,24 @@ public sealed class ChaveAssinaturaProvider : IChaveAssinaturaProvider, IDisposa
 
         ChavePublica = publica;
         ChavePrivada = new RsaSecurityKey(_rsa) { KeyId = KeyId };
+    }
+
+    /// <summary>
+    /// Um PEM só com a chave pública também é aceito pelo <c>ImportFromPem</c>; sem esta checagem o serviço
+    /// subiria normalmente e todo login falharia na hora de assinar o token. Falha rápida na inicialização.
+    /// </summary>
+    private static void GarantirChavePrivada(RSA rsa, string caminho)
+    {
+        try
+        {
+            // [TokenOptimization] - Uma assinatura de 1 byte na inicialização basta para provar que a chave privada existe.
+            rsa.SignData(new byte[] { 0 }, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        }
+        catch (CryptographicException ex)
+        {
+            throw new InvalidOperationException(
+                $"O arquivo {caminho} (Jwt:ChavePrivadaPath) precisa conter a chave privada RSA, não apenas a pública.", ex);
+        }
     }
 
     public void Dispose() => _rsa.Dispose();

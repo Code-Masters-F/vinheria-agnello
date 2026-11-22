@@ -14,6 +14,12 @@ public interface IRefreshTokenRepository
     /// </summary>
     Task<bool> RevogarAsync(string tokenHash, DateTime quando, string? substituidoPorHash, CancellationToken ct = default);
 
+    /// <summary>
+    /// Rotação atômica: revoga <paramref name="tokenHashAtual"/> (se ainda ativo) e grava o <paramref name="novo"/>
+    /// na mesma transação. Retorna <c>false</c> sem gravar nada se o token atual já estava revogado.
+    /// </summary>
+    Task<bool> RotacionarAsync(string tokenHashAtual, RefreshToken novo, DateTime quando, CancellationToken ct = default);
+
     /// <summary>Revoga todas as sessões ativas do usuário (usado ao detectar reuso de token).</summary>
     Task RevogarTodosDoUsuarioAsync(long usuarioId, DateTime quando, CancellationToken ct = default);
 }

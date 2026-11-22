@@ -92,6 +92,20 @@ public sealed class RefreshTokenRepositoryFake : IRefreshTokenRepository
                                     ExpiraEm = t.ExpiraEm, RevogadoEm = quando, SubstituidoPorHash = substituidoPorHash }) > 0);
     }
 
+    public Task<bool> RotacionarAsync(string tokenHashAtual, RefreshToken novo, DateTime quando, CancellationToken ct = default)
+    {
+        // Mesma semântica do repositório real: revoga e grava juntos, sob a mesma trava.
+        lock (_trava)
+        {
+            var revogados = Substituir(t => t.TokenHash == tokenHashAtual && t.RevogadoEm is null,
+                t => new RefreshToken { Id = t.Id, UsuarioId = t.UsuarioId, TokenHash = t.TokenHash, CriadoEm = t.CriadoEm,
+                                        ExpiraEm = t.ExpiraEm, RevogadoEm = quando, SubstituidoPorHash = novo.TokenHash });
+            if (revogados == 0) return Task.FromResult(false);
+            Tokens.Add(novo);
+            return Task.FromResult(true);
+        }
+    }
+
     public Task RevogarTodosDoUsuarioAsync(long usuarioId, DateTime quando, CancellationToken ct = default)
     {
         lock (_trava) Substituir(t => t.UsuarioId == usuarioId && t.RevogadoEm is null,

@@ -20,12 +20,14 @@ public static class DescobertaEndpoints
 
         grupo.MapGet("/openid-configuration", (IOptions<JwtOptions> opcoes) =>
         {
-            var issuer = opcoes.Value.Issuer.TrimEnd('/');
+            // O issuer vai exatamente como configurado (é o mesmo valor do "iss" dos tokens); só o jwks_uri é
+            // normalizado, para não gerar "//" quando o Issuer termina com barra.
+            var issuer = opcoes.Value.Issuer;
             // [TokenOptimization] - Documento pequeno e estático, montado sem consultar banco.
             return Results.Ok(new
             {
                 issuer,
-                jwks_uri = $"{issuer}/.well-known/jwks.json",
+                jwks_uri = $"{issuer.TrimEnd('/')}/.well-known/jwks.json",
                 id_token_signing_alg_values_supported = new[] { SecurityAlgorithms.RsaSha256 },
                 subject_types_supported = new[] { "public" },
                 claims_supported = new[] { "sub", "email", "name", "role", "vinheria_id" },

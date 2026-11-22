@@ -102,15 +102,34 @@ public class RefreshTokenTests : IClassFixture<IdentidadeApiFactory>
     {
         var original = ValorDoCookie(await LoginAsync());
         var rotacionado = ValorDoCookie(await RefreshAsync(original));
+        // Segunda sessão do mesmo usuário (ex.: outro navegador), que também deve cair.
+        var outraSessao = ValorDoCookie(await LoginAsync());
 
         // Um atacante (ou o cliente legítimo) apresenta o token antigo de novo: sinal de roubo.
         var reuso = await RefreshAsync(original);
         Assert.Equal(HttpStatusCode.Unauthorized, reuso.StatusCode);
 
-        // Por segurança, até o token mais novo deixa de valer: o usuário precisa logar de novo.
-        var depois = await RefreshAsync(rotacionado);
-        Assert.Equal(HttpStatusCode.Unauthorized, depois.StatusCode);
+        // Por segurança, até os tokens mais novos deixam de valer: o usuário precisa logar de novo.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(rotacionado)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(outraSessao)).StatusCode);
+        Assert.Equal(3, _repositorio.Tokens.Count);
         Assert.All(_repositorio.Tokens, t => Assert.NotNull(t.RevogadoEm));
+    }
+
+    [Fact]
+    public async Task Refresh_TokenRevogadoQueJaExpirou_Retorna401_SemDerrubarAsOutrasSessoes()
+    {
+        // Sessão antiga: rotacionada (token original revogado) e depois abandonada.
+        var antigo = ValorDoCookie(await LoginAsync());
+        await RefreshAsync(antigo);
+
+        _relogio.Avancar(TimeSpan.FromDays(6));
+        var atual = ValorDoCookie(await LoginAsync());
+        _relogio.Avancar(TimeSpan.FromDays(2)); // o token antigo já expirou; o atual ainda vale
+
+        // Um token expirado não serve para nada: reapresentá-lo não pode derrubar as sessões válidas.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await RefreshAsync(antigo)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await RefreshAsync(atual)).StatusCode);
     }
 
     [Fact]

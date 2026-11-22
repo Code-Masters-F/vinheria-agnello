@@ -16,7 +16,8 @@ namespace IdentidadeApi.Services;
 /// <list type="bullet">
 ///   <item><b>Opaco e aleatório:</b> 256 bits de <see cref="RandomNumberGenerator"/>; não carrega dados do usuário.</item>
 ///   <item><b>Só o hash no banco:</b> SHA-256 do valor; um vazamento do banco não permite reutilizar sessões.</item>
-///   <item><b>Rotação:</b> cada renovação emite um refresh token novo e revoga o anterior (registrando o substituto).</item>
+///   <item><b>Rotação:</b> cada renovação emite um refresh token novo e revoga o anterior (registrando o substituto),
+///   na mesma transação do banco.</item>
 ///   <item><b>Detecção de reuso:</b> apresentar um token já revogado indica roubo (o legítimo e o atacante têm a
 ///   mesma cópia); todas as sessões do usuário são revogadas e ele precisa logar novamente.</item>
 ///   <item><b>Estado atual do usuário:</b> a renovação recarrega o usuário; desativado ou removido não renova.</item>
@@ -58,13 +59,15 @@ public sealed class SessaoService : ISessaoService
         var atual = await _refreshTokens.BuscarPorHashAsync(Hash(refreshToken), ct);
         if (atual is null) return null;
 
+        // Expirado primeiro: um token vencido não dá acesso a nada, então reapresentá-lo (mesmo já revogado)
+        // não pode derrubar as sessões válidas do usuário.
+        if (atual.ExpiraEm <= agora) return null;
+
         if (atual.RevogadoEm is not null)
         {
             await RevogarTudoPorReusoAsync(atual.UsuarioId, agora, ct);
             return null;
         }
-
-        if (atual.ExpiraEm <= agora) return null;
 
         var usuario = await _usuarios.BuscarPorIdAsync(atual.UsuarioId, ct);
         if (usuario is null || !usuario.Ativo)
@@ -74,14 +77,14 @@ public sealed class SessaoService : ISessaoService
         }
 
         var (valor, novo) = NovoRefreshToken(usuario.Id);
-        // Revogação condicional (só se ainda ativo): se outra requisição usou o mesmo token ao mesmo tempo,
-        // apenas uma vence; a outra é tratada como reuso.
-        if (!await _refreshTokens.RevogarAsync(atual.TokenHash, agora, novo.TokenHash, ct))
+        // [TokenOptimization] - Revogação do atual + gravação do novo em uma única transação: ou as duas
+        // acontecem, ou nenhuma. Se outra requisição usou o mesmo token ao mesmo tempo, apenas uma vence;
+        // a outra é tratada como reuso.
+        if (!await _refreshTokens.RotacionarAsync(atual.TokenHash, novo, agora, ct))
         {
             await RevogarTudoPorReusoAsync(atual.UsuarioId, agora, ct);
             return null;
         }
-        await _refreshTokens.SalvarAsync(novo, ct);
 
         _logger.LogInformation("Sessão renovada para o usuário {UsuarioId}", usuario.Id);
         return new SessaoEmitida(_tokens.Emitir(usuario), valor, novo.ExpiraEm);
